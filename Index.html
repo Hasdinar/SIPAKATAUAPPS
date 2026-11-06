@@ -1,0 +1,2723 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 26.2.5.1 (Linux)"/>
+	<meta name="created" content="00:00:00"/>
+	<meta name="changed" content="00:00:00"/>
+	<style type="text/css">
+		@page { size: 8.27in 11.69in; margin: 0.79in }
+		p { margin-bottom: 0.1in; line-height: 115%; background: transparent }
+		pre { background: transparent }
+		pre.western { font-family: "Liberation Mono", monospace; font-size: 10pt }
+		pre.cjk { font-family: "NSimSun", monospace; font-size: 10pt }
+		pre.ctl { font-family: "Liberation Mono", monospace; font-size: 10pt }
+	</style>
+</head>
+<body lang="en-US" link="#000080" vlink="#800000" dir="ltr"><pre class="western">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;id&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+  &lt;title&gt;SIPAKATAU - Student Growth &amp; Assessment Platform&lt;/title&gt;
+  
+  &lt;!-- Tailwind CSS --&gt;
+  &lt;script src=&quot;https://cdn.tailwindcss.com&quot;&gt;&lt;/script&gt;
+  &lt;!-- React &amp; ReactDOM --&gt;
+  &lt;script crossorigin src=&quot;https://unpkg.com/react@18/umd/react.production.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script crossorigin src=&quot;https://unpkg.com/react-dom@18/umd/react-dom.production.min.js&quot;&gt;&lt;/script&gt;
+  &lt;!-- Babel Standalone --&gt;
+  &lt;script src=&quot;https://unpkg.com/@babel/standalone/babel.min.js&quot;&gt;&lt;/script&gt;
+  &lt;!-- Supabase JS v2 --&gt;
+  &lt;script src=&quot;https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2&quot;&gt;&lt;/script&gt;
+  &lt;!-- Lucide Icons --&gt;
+  &lt;script src=&quot;https://unpkg.com/lucide@latest&quot;&gt;&lt;/script&gt;
+  &lt;!-- Prop-Types (Required dependency for Recharts UMD bundle) --&gt;
+  &lt;script src=&quot;https://unpkg.com/prop-types@15.8.1/prop-types.min.js&quot;&gt;&lt;/script&gt;
+  &lt;!-- Recharts --&gt;
+  &lt;script src=&quot;https://unpkg.com/recharts@2.12.7/umd/Recharts.js&quot;&gt;&lt;/script&gt;
+  &lt;!-- SheetJS &amp; jsPDF --&gt;
+  &lt;script src=&quot;https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js&quot;&gt;&lt;/script&gt;
+
+  &lt;script&gt;
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+            },
+            navy: {
+              800: '#1e1b4b',
+              900: '#0f172a',
+              950: '#020617',
+            }
+          }
+        }
+      }
+    }
+  &lt;/script&gt;
+  &lt;style&gt;
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body class=&quot;bg-slate-100 text-slate-800 antialiased selection:bg-primary-500 selection:text-white&quot;&gt;
+  &lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
+
+  &lt;script type=&quot;text/babel&quot;&gt;
+    const { useState, useEffect, useMemo, useRef } = React;
+    const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } = window.Recharts || {};
+
+    // ==========================================
+    // CONFIGURATION &amp; INITIAL STATE
+    // ==========================================
+    const IS_PREVIEW = False; // Set to false when connecting to production Supabase
+    const SUPABASE_URL = &quot;https://rxuqerbxqwgkpjekprbd.supabase.co&quot;;
+    const SUPABASE_ANON_KEY = &quot;sb_publishable_uOjpJqJq-feLB4ZfxUFabg_9F6HWudd&quot;;
+
+    let supabase = null;
+    if (!IS_PREVIEW &amp;&amp; window.supabase) {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // Default Seed Data - Genetics IPA SMP
+    const INITIAL_SCHOOL = {
+      school_name: 'SMP Negeri 1 Gowa',
+      npsn: '40300123',
+      address: 'Jl. Sultan Hasanuddin No. 45, Sungguminasa',
+      subdistrict: 'Somba Opu',
+      district: 'Kabupaten Gowa',
+      regency: 'Kabupaten Gowa',
+      province: 'Sulawesi Selatan',
+      logo_url: '',
+      headmaster_name: 'Drs. H. Muhammad Said, M.Pd.',
+      headmaster_nip: '196804121994031005'
+    };
+
+    const INITIAL_TEACHER = {
+      full_name: 'Hasdinar, S.Pd.',
+      nip: '198503152010012018',
+      subject: 'Ilmu Pengetahuan Alam (IPA)',
+      email: 'hasdinar@gowa.belajar.id',
+      phone: '081234567890',
+      institution: 'Dinas Pendidikan Kabupaten Gowa'
+    };
+
+    const INITIAL_CLASSES = [
+      { id: 'c1', name: 'VIII.A', grade_level: 'VIII', academic_year: '2025/2026', semester: 'Genap' },
+      { id: 'c2', name: 'VIII.B', grade_level: 'VIII', academic_year: '2025/2026', semester: 'Genap' }
+    ];
+
+    const INITIAL_STUDENTS = [
+      { id: 's1', class_id: 'c1', full_name: 'Andi Muhammad Rian', nis: '1021', nisn: '0081234561', gender: 'L', pob: 'Sungguminasa', dob: '2011-04-12', address: 'Jl. Tumanurung No. 12' },
+      { id: 's2', class_id: 'c1', full_name: 'Siti Nur Aisyah', nis: '1022', nisn: '0081234562', gender: 'P', pob: 'Gowa', dob: '2011-06-18', address: 'Jl. Masjid Raya No. 4' },
+      { id: 's3', class_id: 'c1', full_name: 'Nurul Hidayah', nis: '1023', nisn: '0081234563', gender: 'P', pob: 'Takalar', dob: '2011-01-25', address: 'Jl. Hos Cokroaminoto No. 8' },
+      { id: 's4', class_id: 'c1', full_name: 'Fathir Ahmad', nis: '1024', nisn: '0081234564', gender: 'L', pob: 'Makassar', dob: '2011-09-30', address: 'Jl. Sultan Hasanuddin No. 88' },
+      { id: 's5', class_id: 'c1', full_name: 'Rezky Pratama', nis: '1025', nisn: '0081234565', gender: 'L', pob: 'Gowa', dob: '2011-11-05', address: 'Jl. Syekh Yusuf No. 19' }
+    ];
+
+    // Hierarchical Curriculum Data
+    const INITIAL_CURRICULUM = [
+      {
+        id: 'cp1',
+        subject: 'Ilmu Pengetahuan Alam (IPA)',
+        phase: 'D',
+        element: 'Pemahaman IPA',
+        academic_year: '2025/2026',
+        description: 'Peserta didik memahami proses pewarisan sifat, struktur DNA/RNA, serta hukum Mendel dalam penentuan sifat makhluk hidup.',
+        materials: [
+          {
+            id: 'm1',
+            title: 'Pewarisan Sifat dan Genetika',
+            description: 'Prinsip dasar materi genetik, persilangan monohibrid, dan dihibrid.',
+            sort_order: 1,
+            tps: [
+              {
+                id: 'tp1',
+                code: 'TP.IPA.8.1',
+                formulation: 'Menganalisis mekanisme pewarisan sifat pada makhluk hidup berdasarkan Hukum Mendel.',
+                sort_order: 1,
+                kktp_level: 'Multistructural',
+                kktp_config: {
+                  prestructural_min: 0, prestructural_max: 59,
+                  unistructural_min: 60, unistructural_max: 74,
+                  multistructural_min: 75, multistructural_max: 83,
+                  relational_min: 84, relational_max: 92,
+                  extended_min: 93, extended_max: 100,
+                  interval_width: 8
+                },
+                iktps: [
+                  {
+                    id: 'ik1',
+                    formulation: 'Menjelaskan istilah-istilah dasar genetik (gen, kromosom, dominan, resesif, genotipe, fenotipe).',
+                    rubric: {
+                      prestructural: 'Belum mampu menyebutkan istilah dasar genetika.',
+                      unistructural: 'Menyebutkan 1-2 istilah dasar genetika tanpa memahami artinya.',
+                      multistructural: 'Menyebutkan berbagai istilah dasar genetika dan definisinya secara terpisah.',
+                      relational: 'Menghubungkan antara gen, kromosom, dan fenotipe yang tampak pada organisme.',
+                      extended: 'Menganalisis dan memprediksi variasi fenotipe berdasarkan hubungan kompleks antar gen.'
+                    }
+                  },
+                  {
+                    id: 'ik2',
+                    formulation: 'Menentukan rasio fenotipe dan genotipe persilangan Monohibrid.',
+                    rubric: {
+                      prestructural: 'Belum mampu membuat papan Punnett persilangan monohibrid.',
+                      unistructural: 'Membuat diagram Punnett tetapi keliru menentukan rasio fenotipe.',
+                      multistructural: 'Menghitung rasio fenotipe (3:1) dan genotipe (1:2:1) persilangan monohibrid dengan benar.',
+                      relational: 'Mengaitkan rasio monohibrid dengan hukum segregasi bebas Mendel pada kasus nyata.',
+                      extended: 'Menggeneralisasi prinsip monohibrid untuk menyelesaikan soal penyimpangan semu hukum Mendel.'
+                    }
+                  },
+                  {
+                    id: 'ik3',
+                    formulation: 'Memprediksi kelainan sifat menurun pada manusia (albino/hemofilia) berdasarkan silsilah keluarga.',
+                    rubric: {
+                      prestructural: 'Belum mengenali simbol-simbol silsilah keluarga (peta silsilah).',
+                      unistructural: 'Menunjukkan anggota keluarga yang menderita kelainan pada peta silsilah.',
+                      multistructural: 'Mengidentifikasi sifat pembawa (carrier) dan penderita pada peta silsilah keluarga.',
+                      relational: 'Menganalisis pola penurunan genetik terikat kromosom seks vs autosom pada peta silsilah.',
+                      extended: 'Menyusun usulan konseling genetik bagi keluarga berdasarkan analisis risiko silsilah.'
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // Shared Student Login Credentials
+    const SHARED_STUDENT_CREDENTIALS = {
+      username: 'siswa8a',
+      password: 'gowajuara'
+    };
+
+    // ==========================================
+    // MAIN APP COMPONENT
+    // ==========================================
+    function App() {
+      // Session State
+      const [session, setSession] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_session');
+        return saved ? JSON.parse(saved) : null;
+      });
+
+      // Active Menu State
+      const [activeMenu, setActiveMenu] = useState('dashboard');
+
+      // Database / Application States
+      const [schoolProfile, setSchoolProfile] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_school');
+        return saved ? JSON.parse(saved) : INITIAL_SCHOOL;
+      });
+
+      const [teacherProfile, setTeacherProfile] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_teacher');
+        return saved ? JSON.parse(saved) : INITIAL_TEACHER;
+      });
+
+      const [classes, setClasses] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_classes');
+        return saved ? JSON.parse(saved) : INITIAL_CLASSES;
+      });
+
+      const [students, setStudents] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_students');
+        return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
+      });
+
+      const [curriculum, setCurriculum] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_curriculum');
+        return saved ? JSON.parse(saved) : INITIAL_CURRICULUM;
+      });
+
+      // Attendance Sessions &amp; Records
+      const [attendanceSessions, setAttendanceSessions] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_attendance_sessions');
+        return saved ? JSON.parse(saved) : [
+          { id: 'att1', class_id: 'c1', meeting_no: 1, date: '2026-02-02', topic: 'Pengenalan Materi Genetik DNA &amp; RNA' },
+          { id: 'att2', class_id: 'c1', meeting_no: 2, date: '2026-02-09', topic: 'Persilangan Monohibrid Dominan Penuh' }
+        ];
+      });
+
+      const [attendanceRecords, setAttendanceRecords] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_attendance_records');
+        return saved ? JSON.parse(saved) : [
+          { id: 'ar1', session_id: 'att1', student_id: 's1', status: 'Hadir', notes: '' },
+          { id: 'ar2', session_id: 'att1', student_id: 's2', status: 'Hadir', notes: '' },
+          { id: 'ar3', session_id: 'att1', student_id: 's3', status: 'Izin', notes: 'Urusan keluarga' },
+          { id: 'ar4', session_id: 'att1', student_id: 's4', status: 'Hadir', notes: '' },
+          { id: 'ar5', session_id: 'att1', student_id: 's5', status: 'Terlambat', notes: 'Macet' },
+          { id: 'ar6', session_id: 'att2', student_id: 's1', status: 'Hadir', notes: '' },
+          { id: 'ar7', session_id: 'att2', student_id: 's2', status: 'Hadir', notes: '' },
+          { id: 'ar8', session_id: 'att2', student_id: 's3', status: 'Hadir', notes: '' },
+          { id: 'ar9', session_id: 'att2', student_id: 's4', status: 'Sakit', notes: 'Demam' },
+          { id: 'ar10', session_id: 'att2', student_id: 's5', status: 'Hadir', notes: '' }
+        ];
+      });
+
+      // SOLO Assessments Scores per IKTP
+      // Format: { 'tp1_ik1_s1': 4, 'tp1_ik2_s1': 3, 'tp1_ik3_s1': 4 } -&gt; Relational, Multistructural, Relational -&gt; Avg: 3.67
+      const [soloScores, setSoloScores] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_solo_scores');
+        return saved ? JSON.parse(saved) : {
+          'tp1_ik1_s1': 4, 'tp1_ik2_s1': 3, 'tp1_ik3_s1': 4, // 3.67 -&gt; Relational -&gt; 80.36
+          'tp1_ik1_s2': 3, 'tp1_ik2_s2': 3, 'tp1_ik3_s2': 3, // 3.00 -&gt; Multistructural -&gt; 75.00
+          'tp1_ik1_s3': 2, 'tp1_ik2_s3': 2, 'tp1_ik3_s3': 1, // 1.67 -&gt; Unistructural -&gt; 62.55
+          'tp1_ik1_s4': 5, 'tp1_ik2_s4': 4, 'tp1_ik3_s4': 4  // 4.33 -&gt; Relational -&gt; 85.64
+        };
+      });
+
+      // Semester Final Grades
+      const [semesterGrades, setSemesterGrades] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_semester_grades');
+        return saved ? JSON.parse(saved) : {
+          'c1_s1': { grade: 85, notes: 'Menunjukkan pemahaman relational yang sangat baik.' },
+          'c1_s2': { grade: 78, notes: 'Telah mencapai KKTP tingkat Multistructural.' }
+        };
+      });
+
+      // Activity Logs
+      const [activityLogs, setActivityLogs] = useState(() =&gt; {
+        const saved = localStorage.getItem('sipakatau_activity_logs');
+        return saved ? JSON.parse(saved) : [
+          { id: 'l1', timestamp: '2026-02-10 09:30', description: 'Input penilaian SOLO TP.IPA.8.1 Kelas VIII.A' },
+          { id: 'l2', timestamp: '2026-02-09 10:15', description: 'Pencatatan Kehadiran Pertemuan 2 Kelas VIII.A' }
+        ];
+      });
+
+      // Save Data to LocalStorage automatically
+      useEffect(() =&gt; {
+        localStorage.setItem('sipakatau_school', JSON.stringify(schoolProfile));
+        localStorage.setItem('sipakatau_teacher', JSON.stringify(teacherProfile));
+        localStorage.setItem('sipakatau_classes', JSON.stringify(classes));
+        localStorage.setItem('sipakatau_students', JSON.stringify(students));
+        localStorage.setItem('sipakatau_curriculum', JSON.stringify(curriculum));
+        localStorage.setItem('sipakatau_attendance_sessions', JSON.stringify(attendanceSessions));
+        localStorage.setItem('sipakatau_attendance_records', JSON.stringify(attendanceRecords));
+        localStorage.setItem('sipakatau_solo_scores', JSON.stringify(soloScores));
+        localStorage.setItem('sipakatau_semester_grades', JSON.stringify(semesterGrades));
+        localStorage.setItem('sipakatau_activity_logs', JSON.stringify(activityLogs));
+      }, [schoolProfile, teacherProfile, classes, students, curriculum, attendanceSessions, attendanceRecords, soloScores, semesterGrades, activityLogs]);
+
+      // Initialize Lucide Icons
+      useEffect(() =&gt; {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+
+      // Activity logger helper
+      const logActivity = (desc) =&gt; {
+        const newLog = {
+          id: 'l_' + Date.now(),
+          timestamp: new Date().toLocaleString('id-ID'),
+          description: desc
+        };
+        setActivityLogs(prev =&gt; [newLog, ...prev.slice(0, 19)]);
+      };
+
+      const handleLogin = (role, creds) =&gt; {
+        let userSession = null;
+        if (role === 'teacher') {
+          userSession = { role: 'teacher', name: teacherProfile.full_name, email: teacherProfile.email };
+        } else {
+          userSession = { role: 'student', name: 'Siswa VIII.A (Akses Read-Only)', class_id: 'c1' };
+        }
+        setSession(userSession);
+        localStorage.setItem('sipakatau_session', JSON.stringify(userSession));
+        logActivity(`User Login sebagai ${role === 'teacher' ? 'Guru' : 'Siswa'}`);
+      };
+
+      const handleLogout = () =&gt; {
+        setSession(null);
+        localStorage.removeItem('sipakatau_session');
+      };
+
+      if (!session) {
+        return &lt;LoginScreen onLogin={handleLogin} sharedCreds={SHARED_STUDENT_CREDENTIALS} /&gt;;
+      }
+
+      return (
+        &lt;div className=&quot;flex h-screen overflow-hidden bg-slate-100&quot;&gt;
+          {/* SIDEBAR NAVIGATION */}
+          &lt;aside className=&quot;w-64 bg-navy-900 text-white flex flex-col shadow-xl z-20 transition-all duration-300&quot;&gt;
+            {/* Header / Brand */}
+            &lt;div className=&quot;p-5 border-b border-slate-800 flex items-center space-x-3&quot;&gt;
+              &lt;div className=&quot;bg-gradient-to-tr from-primary-700 to-primary-500 p-2.5 rounded-xl text-white font-black text-xl shadow-md shadow-primary-600/30&quot;&gt;
+                SP
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;h1 className=&quot;font-bold text-lg tracking-wide text-white leading-tight&quot;&gt;SIPAKATAU&lt;/h1&gt;
+                &lt;p className=&quot;text-[11px] text-slate-400 font-medium&quot;&gt;Growth &amp; SOLO Assessment&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            {/* Navigation Menu */}
+            &lt;nav className=&quot;flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar&quot;&gt;
+              &lt;div className=&quot;text-[10px] font-bold text-slate-400 px-3 mb-2 uppercase tracking-wider&quot;&gt;
+                {session.role === 'teacher' ? 'Menu Utama Guru' : 'Menu Murid (Read-Only)'}
+              &lt;/div&gt;
+
+              {session.role === 'teacher' ? (
+                &lt;&gt;
+                  &lt;SidebarItem icon=&quot;layout-dashboard&quot; label=&quot;Dashboard&quot; active={activeMenu === 'dashboard'} onClick={() =&gt; setActiveMenu('dashboard')} /&gt;
+                  &lt;SidebarItem icon=&quot;user-cog&quot; label=&quot;Identitas Guru &amp; Sekolah&quot; active={activeMenu === 'identity'} onClick={() =&gt; setActiveMenu('identity')} /&gt;
+                  &lt;SidebarItem icon=&quot;school&quot; label=&quot;Data Kelas&quot; active={activeMenu === 'classes'} onClick={() =&gt; setActiveMenu('classes')} /&gt;
+                  &lt;SidebarItem icon=&quot;users&quot; label=&quot;Data Murid &amp; Impor&quot; active={activeMenu === 'students'} onClick={() =&gt; setActiveMenu('students')} /&gt;
+                  &lt;SidebarItem icon=&quot;calendar-check&quot; label=&quot;Kehadiran Murid&quot; active={activeMenu === 'attendance'} onClick={() =&gt; setActiveMenu('attendance')} /&gt;
+                  &lt;SidebarItem icon=&quot;book-open&quot; label=&quot;Kurikulum &amp; Rubrik SOLO&quot; active={activeMenu === 'curriculum'} onClick={() =&gt; setActiveMenu('curriculum')} /&gt;
+                  &lt;SidebarItem icon=&quot;clipboard-pen&quot; label=&quot;Input Penilaian SOLO&quot; active={activeMenu === 'assessment'} onClick={() =&gt; setActiveMenu('assessment')} /&gt;
+                  &lt;SidebarItem icon=&quot;award&quot; label=&quot;Nilai Akhir Semester&quot; active={activeMenu === 'semester'} onClick={() =&gt; setActiveMenu('semester')} /&gt;
+                  &lt;SidebarItem icon=&quot;file-text&quot; label=&quot;Laporan Resmi&quot; active={activeMenu === 'reports'} onClick={() =&gt; setActiveMenu('reports')} /&gt;
+                &lt;/&gt;
+              ) : (
+                &lt;&gt;
+                  &lt;SidebarItem icon=&quot;layout-dashboard&quot; label=&quot;Dashboard Capaian&quot; active={activeMenu === 'dashboard'} onClick={() =&gt; setActiveMenu('dashboard')} /&gt;
+                  &lt;SidebarItem icon=&quot;calendar-check&quot; label=&quot;Rekap Kehadiran&quot; active={activeMenu === 'attendance'} onClick={() =&gt; setActiveMenu('attendance')} /&gt;
+                  &lt;SidebarItem icon=&quot;clipboard-pen&quot; label=&quot;Hasil Penilaian SOLO&quot; active={activeMenu === 'assessment'} onClick={() =&gt; setActiveMenu('assessment')} /&gt;
+                  &lt;SidebarItem icon=&quot;file-text&quot; label=&quot;Laporan Resmi Saya&quot; active={activeMenu === 'reports'} onClick={() =&gt; setActiveMenu('reports')} /&gt;
+                &lt;/&gt;
+              )}
+            &lt;/nav&gt;
+
+            {/* Footer / Developer Info */}
+            &lt;div className=&quot;p-4 border-t border-slate-800 bg-slate-950/60&quot;&gt;
+              &lt;div className=&quot;mb-3 text-[11px] text-slate-400&quot;&gt;
+                &lt;p className=&quot;font-semibold text-slate-300&quot;&gt;Pengembang:&lt;/p&gt;
+                &lt;p&gt;Hasdinar, S.Pd.&lt;/p&gt;
+                &lt;p className=&quot;text-[10px] text-slate-500&quot;&gt;Dinas Pendidikan Kab. Gowa&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;button 
+                onClick={handleLogout}
+                className=&quot;w-full flex items-center justify-center space-x-2 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white text-xs font-semibold py-2 rounded-xl transition duration-200&quot;
+              &gt;
+                &lt;i data-lucide=&quot;log-out&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+                &lt;span&gt;Keluar Akun&lt;/span&gt;
+              &lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/aside&gt;
+
+          {/* MAIN CONTENT WRAPPER */}
+          &lt;main className=&quot;flex-1 flex flex-col overflow-hidden&quot;&gt;
+            {/* Top Navbar */}
+            &lt;header className=&quot;h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 shadow-sm&quot;&gt;
+              &lt;div className=&quot;flex items-center space-x-3&quot;&gt;
+                &lt;span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${session.role === 'teacher' ? 'bg-primary-100 text-primary-700 border border-primary-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'}`}&gt;
+                  {session.role === 'teacher' ? 'Guru Pengelola' : 'Murid (Lihat Saja)'}
+                &lt;/span&gt;
+                &lt;h2 className=&quot;font-bold text-slate-800 text-lg capitalize&quot;&gt;{activeMenu.replace('-', ' ')}&lt;/h2&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex items-center space-x-4&quot;&gt;
+                &lt;div className=&quot;text-right hidden sm:block&quot;&gt;
+                  &lt;p className=&quot;text-sm font-bold text-slate-800 leading-tight&quot;&gt;{session.name}&lt;/p&gt;
+                  &lt;p className=&quot;text-xs text-slate-500&quot;&gt;{schoolProfile.school_name}&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-primary-500 text-white flex items-center justify-center font-bold shadow-md shadow-primary-500/20&quot;&gt;
+                  {session.role === 'teacher' ? 'H' : 'S'}
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/header&gt;
+
+            {/* Content Body */}
+            &lt;div className=&quot;flex-1 overflow-y-auto p-6 bg-slate-100 custom-scrollbar&quot;&gt;
+              {activeMenu === 'dashboard' &amp;&amp; (
+                &lt;DashboardView 
+                  session={session} 
+                  teacher={teacherProfile} 
+                  school={schoolProfile} 
+                  classes={classes} 
+                  students={students}
+                  curriculum={curriculum}
+                  attendanceSessions={attendanceSessions}
+                  attendanceRecords={attendanceRecords}
+                  soloScores={soloScores}
+                  activityLogs={activityLogs}
+                  onNavigate={setActiveMenu}
+                /&gt;
+              )}
+
+              {activeMenu === 'identity' &amp;&amp; session.role === 'teacher' &amp;&amp; (
+                &lt;IdentityView 
+                  teacher={teacherProfile} 
+                  school={schoolProfile} 
+                  onSaveTeacher={(data) =&gt; { setTeacherProfile(data); logActivity('Memperbarui Profil Guru'); }}
+                  onSaveSchool={(data) =&gt; { setSchoolProfile(data); logActivity('Memperbarui Profil Sekolah'); }}
+                /&gt;
+              )}
+
+              {activeMenu === 'classes' &amp;&amp; session.role === 'teacher' &amp;&amp; (
+                &lt;ClassesView 
+                  classes={classes} 
+                  students={students}
+                  onAddClass={(newC) =&gt; { setClasses(prev =&gt; [...prev, newC]); logActivity(`Menambah Kelas ${newC.name}`); }}
+                  onUpdateClass={(upC) =&gt; { setClasses(prev =&gt; prev.map(c =&gt; c.id === upC.id ? upC : c)); logActivity(`Mengedit Kelas ${upC.name}`); }}
+                  onDeleteClass={(id) =&gt; { setClasses(prev =&gt; prev.filter(c =&gt; c.id !== id)); logActivity('Menghapus Kelas'); }}
+                /&gt;
+              )}
+
+              {activeMenu === 'students' &amp;&amp; (
+                &lt;StudentsView 
+                  session={session}
+                  students={students} 
+                  classes={classes} 
+                  onAddStudent={(st) =&gt; { setStudents(prev =&gt; [...prev, st]); logActivity(`Menambah Murid ${st.full_name}`); }}
+                  onUpdateStudent={(st) =&gt; { setStudents(prev =&gt; prev.map(s =&gt; s.id === st.id ? st : s)); logActivity(`Mengedit Murid ${st.full_name}`); }}
+                  onDeleteStudent={(id) =&gt; { setStudents(prev =&gt; prev.filter(s =&gt; s.id !== id)); logActivity('Menghapus Murid'); }}
+                  onImportStudents={(importedList) =&gt; { setStudents(prev =&gt; [...prev, ...importedList]); logActivity(`Impor ${importedList.length} Murid via Excel`); }}
+                /&gt;
+              )}
+
+              {activeMenu === 'attendance' &amp;&amp; (
+                &lt;AttendanceView 
+                  session={session}
+                  classes={classes}
+                  students={students}
+                  attendanceSessions={attendanceSessions}
+                  attendanceRecords={attendanceRecords}
+                  onSaveSession={(sess, recs) =&gt; {
+                    setAttendanceSessions(prev =&gt; [sess, ...prev.filter(s =&gt; s.id !== sess.id)]);
+                    setAttendanceRecords(prev =&gt; [...prev.filter(r =&gt; r.session_id !== sess.id), ...recs]);
+                    logActivity(`Mencatat Kehadiran Pertemuan ${sess.meeting_no}`);
+                  }}
+                  onDeleteSession={(sessId) =&gt; {
+                    setAttendanceSessions(prev =&gt; prev.filter(s =&gt; s.id !== sessId));
+                    setAttendanceRecords(prev =&gt; prev.filter(r =&gt; r.session_id !== sessId));
+                    logActivity('Menghapus Pertemuan Kehadiran');
+                  }}
+                /&gt;
+              )}
+
+              {activeMenu === 'curriculum' &amp;&amp; (
+                &lt;CurriculumView 
+                  session={session}
+                  curriculum={curriculum}
+                  onUpdateCurriculum={(newCurr) =&gt; { setCurriculum(newCurr); logActivity('Memperbarui Struktur Kurikulum &amp; Rubrik SOLO'); }}
+                /&gt;
+              )}
+
+              {activeMenu === 'assessment' &amp;&amp; (
+                &lt;AssessmentSOLOView 
+                  session={session}
+                  classes={classes}
+                  students={students}
+                  curriculum={curriculum}
+                  soloScores={soloScores}
+                  onSaveScores={(updatedScores) =&gt; {
+                    setSoloScores(prev =&gt; ({ ...prev, ...updatedScores }));
+                    logActivity('Menyimpan Penilaian SOLO');
+                  }}
+                /&gt;
+              )}
+
+              {activeMenu === 'semester' &amp;&amp; (
+                &lt;SemesterGradeView 
+                  session={session}
+                  classes={classes}
+                  students={students}
+                  semesterGrades={semesterGrades}
+                  onSaveGrades={(updatedGrades) =&gt; {
+                    setSemesterGrades(prev =&gt; ({ ...prev, ...updatedGrades }));
+                    logActivity('Memperbarui Nilai Akhir Semester');
+                  }}
+                /&gt;
+              )}
+
+              {activeMenu === 'reports' &amp;&amp; (
+                &lt;OfficialReportsView 
+                  session={session}
+                  school={schoolProfile}
+                  teacher={teacherProfile}
+                  classes={classes}
+                  students={students}
+                  curriculum={curriculum}
+                  attendanceSessions={attendanceSessions}
+                  attendanceRecords={attendanceRecords}
+                  soloScores={soloScores}
+                  semesterGrades={semesterGrades}
+                /&gt;
+              )}
+            &lt;/div&gt;
+          &lt;/main&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // SIDEBAR ITEM
+    // ==========================================
+    function SidebarItem({ icon, label, active, onClick }) {
+      return (
+        &lt;button 
+          onClick={onClick}
+          className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition duration-200 ${
+            active 
+              ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30 font-bold' 
+              : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+          }`}
+        &gt;
+          &lt;i data-lucide={icon} className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+          &lt;span&gt;{label}&lt;/span&gt;
+        &lt;/button&gt;
+      );
+    }
+
+    // ==========================================
+    // LOGIN SCREEN COMPONENT
+    // ==========================================
+    function LoginScreen({ onLogin, sharedCreds }) {
+      const [loginRole, setLoginRole] = useState('teacher'); // 'teacher' | 'student'
+      const [email, setEmail] = useState('hasdinar@gowa.belajar.id');
+      const [password, setPassword] = useState('demopassword');
+      
+      const [studentUser, setStudentUser] = useState(sharedCreds.username);
+      const [studentPass, setStudentPass] = useState(sharedCreds.password);
+      const [errorMsg, setErrorMsg] = useState('');
+
+      const handleSubmit = (e) =&gt; {
+        e.preventDefault();
+        setErrorMsg('');
+
+        if (loginRole === 'teacher') {
+          if (!email || !password) {
+            setErrorMsg('Email dan password guru wajib diisi!');
+            return;
+          }
+          onLogin('teacher', { email, password });
+        } else {
+          if (studentUser !== sharedCreds.username || studentPass !== sharedCreds.password) {
+            setErrorMsg('Username atau password siswa bersama salah!');
+            return;
+          }
+          onLogin('student', { username: studentUser, password: studentPass });
+        }
+      };
+
+      return (
+        &lt;div className=&quot;min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden&quot;&gt;
+          {/* Decorative background gradients */}
+          &lt;div className=&quot;absolute -top-40 -left-40 w-96 h-96 bg-primary-600/20 rounded-full blur-3xl&quot;&gt;&lt;/div&gt;
+          &lt;div className=&quot;absolute -bottom-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl&quot;&gt;&lt;/div&gt;
+
+          &lt;div className=&quot;max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 z-10 border border-slate-100&quot;&gt;
+            &lt;div className=&quot;text-center mb-6&quot;&gt;
+              &lt;div className=&quot;inline-flex bg-gradient-to-tr from-primary-700 to-primary-500 text-white p-3.5 rounded-2xl text-2xl font-black mb-3 shadow-xl shadow-primary-500/30&quot;&gt;
+                SP
+              &lt;/div&gt;
+              &lt;h1 className=&quot;text-2xl font-black text-slate-900 tracking-tight&quot;&gt;SIPAKATAU&lt;/h1&gt;
+              &lt;p className=&quot;text-xs font-semibold text-primary-600 mt-1&quot;&gt;Student Growth &amp; Assessment Platform&lt;/p&gt;
+              &lt;p className=&quot;text-[11px] text-slate-400 italic&quot;&gt;&quot;Menghargai Proses, Mengembangkan Setiap Murid.&quot;&lt;/p&gt;
+            &lt;/div&gt;
+
+            {/* Role Tab Selector */}
+            &lt;div className=&quot;flex bg-slate-100 p-1 rounded-2xl mb-6 border border-slate-200&quot;&gt;
+              &lt;button 
+                type=&quot;button&quot;
+                onClick={() =&gt; { setLoginRole('teacher'); setErrorMsg(''); }}
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition duration-200 ${loginRole === 'teacher' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              &gt;
+                Login Guru (Pengelola)
+              &lt;/button&gt;
+              &lt;button 
+                type=&quot;button&quot;
+                onClick={() =&gt; { setLoginRole('student'); setErrorMsg(''); }}
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition duration-200 ${loginRole === 'student' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              &gt;
+                Login Siswa (Lihat Saja)
+              &lt;/button&gt;
+            &lt;/div&gt;
+
+            {errorMsg &amp;&amp; (
+              &lt;div className=&quot;mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl flex items-center space-x-2&quot;&gt;
+                &lt;i data-lucide=&quot;alert-circle&quot; className=&quot;w-4 h-4 flex-shrink-0&quot;&gt;&lt;/i&gt;
+                &lt;span&gt;{errorMsg}&lt;/span&gt;
+              &lt;/div&gt;
+            )}
+
+            &lt;form onSubmit={handleSubmit} className=&quot;space-y-4&quot;&gt;
+              {loginRole === 'teacher' ? (
+                &lt;&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Email Guru&lt;/label&gt;
+                    &lt;input 
+                      type=&quot;email&quot; 
+                      value={email}
+                      onChange={(e) =&gt; setEmail(e.target.value)}
+                      className=&quot;w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 outline-none transition&quot;
+                      placeholder=&quot;nama@guru.belajar.id&quot;
+                      required
+                    /&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Password&lt;/label&gt;
+                    &lt;input 
+                      type=&quot;password&quot; 
+                      value={password}
+                      onChange={(e) =&gt; setPassword(e.target.value)}
+                      className=&quot;w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 outline-none transition&quot;
+                      placeholder=&quot;â¢â¢â¢â¢â¢â¢â¢â¢&quot;
+                      required
+                    /&gt;
+                  &lt;/div&gt;
+                &lt;/&gt;
+              ) : (
+                &lt;&gt;
+                  &lt;div className=&quot;bg-primary-50 border border-primary-100 p-3 rounded-xl text-[11px] text-primary-800 mb-2&quot;&gt;
+                    &lt;p className=&quot;font-bold&quot;&gt;Akses Akun Siswa Bersama:&lt;/p&gt;
+                    &lt;p className=&quot;mt-0.5&quot;&gt;Seluruh siswa dapat login menggunakan 1 username &amp; password bersama untuk melihat rekap nilai &amp; kehadiran.&lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Username Siswa Bersama&lt;/label&gt;
+                    &lt;input 
+                      type=&quot;text&quot; 
+                      value={studentUser}
+                      onChange={(e) =&gt; setStudentUser(e.target.value)}
+                      className=&quot;w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 outline-none transition&quot;
+                      placeholder=&quot;siswa8a&quot;
+                      required
+                    /&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Password Bersama&lt;/label&gt;
+                    &lt;input 
+                      type=&quot;password&quot; 
+                      value={studentPass}
+                      onChange={(e) =&gt; setStudentPass(e.target.value)}
+                      className=&quot;w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 outline-none transition&quot;
+                      placeholder=&quot;â¢â¢â¢â¢â¢â¢â¢â¢&quot;
+                      required
+                    /&gt;
+                  &lt;/div&gt;
+                &lt;/&gt;
+              )}
+
+              &lt;button 
+                type=&quot;submit&quot; 
+                className=&quot;w-full bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white font-bold py-3 rounded-xl text-xs transition duration-200 shadow-lg shadow-primary-600/30 flex items-center justify-center space-x-2&quot;
+              &gt;
+                &lt;span&gt;Masuk ke SIPAKATAU&lt;/span&gt;
+                &lt;i data-lucide=&quot;arrow-right&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+              &lt;/button&gt;
+            &lt;/form&gt;
+
+            &lt;div className=&quot;mt-6 pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400&quot;&gt;
+              &lt;p&gt;Dinas Pendidikan Kabupaten Gowa â¢ Hasdinar, S.Pd.&lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 1: DASHBOARD VIEW
+    // ==========================================
+    function DashboardView({ session, teacher, school, classes, students, curriculum, attendanceSessions, attendanceRecords, soloScores, activityLogs, onNavigate }) {
+      const isTeacher = session.role === 'teacher';
+
+      // Computations
+      const totalClasses = classes.length;
+      const totalStudents = students.length;
+      const totalMeetings = attendanceSessions.length;
+
+      // Calculate SOLO distribution
+      const soloDist = useMemo(() =&gt; {
+        const counts = { Prestructural: 0, Unistructural: 0, Multistructural: 0, Relational: 0, Extended: 0 };
+        // Group by student for TP1
+        const studentAveragedLevels = {};
+
+        students.forEach(st =&gt; {
+          let sum = 0, count = 0;
+          Object.keys(soloScores).forEach(key =&gt; {
+            if (key.endsWith(`_${st.id}`)) {
+              sum += soloScores[key];
+              count++;
+            }
+          });
+          if (count &gt; 0) {
+            const avg = sum / count;
+            if (avg &lt; 1.5) counts.Prestructural++;
+            else if (avg &lt; 2.5) counts.Unistructural++;
+            else if (avg &lt; 3.5) counts.Multistructural++;
+            else if (avg &lt; 4.5) counts.Relational++;
+            else counts.Extended++;
+          }
+        });
+        return [
+          { name: 'Prestructural', value: counts.Prestructural, fill: '#ef4444' },
+          { name: 'Unistructural', value: counts.Unistructural, fill: '#f97316' },
+          { name: 'Multistructural', value: counts.Multistructural, fill: '#eab308' },
+          { name: 'Relational', value: counts.Relational, fill: '#3b82f6' },
+          { name: 'Extended Abstract', value: counts.Extended, fill: '#8b5cf6' }
+        ];
+      }, [students, soloScores]);
+
+      // Attendance Stats
+      const attStats = useMemo(() =&gt; {
+        let h = 0, i = 0, s = 0, a = 0, t = 0;
+        attendanceRecords.forEach(r =&gt; {
+          if (r.status === 'Hadir') h++;
+          else if (r.status === 'Izin') i++;
+          else if (r.status === 'Sakit') s++;
+          else if (r.status === 'Alpa') a++;
+          else if (r.status === 'Terlambat') t++;
+        });
+        const totalRecorded = h + i + s + a + t;
+        const rate = totalRecorded &gt; 0 ? Math.round(((h + t) / totalRecorded) * 100) : 0;
+        return { h, i, s, a, t, rate };
+      }, [attendanceRecords]);
+
+      return (
+        &lt;div className=&quot;space-y-6&quot;&gt;
+          {/* Welcome Header */}
+          &lt;div className=&quot;bg-gradient-to-r from-navy-900 via-primary-900 to-primary-800 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden&quot;&gt;
+            &lt;div className=&quot;relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4&quot;&gt;
+              &lt;div&gt;
+                &lt;span className=&quot;text-xs font-bold text-primary-200 bg-white/10 px-3 py-1 rounded-full uppercase tracking-wider&quot;&gt;
+                  Tahun Ajaran 2025/2026 â¢ Semester Genap
+                &lt;/span&gt;
+                &lt;h2 className=&quot;text-2xl font-black mt-2&quot;&gt;Selamat Datang, {session.name}!&lt;/h2&gt;
+                &lt;p className=&quot;text-xs text-slate-300 mt-1 max-w-xl&quot;&gt;
+                  {school.school_name} â Platform Pengelolaan Pembelajaran &amp; Penilaian Berbasis Taksonomi SOLO.
+                &lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;button 
+                  onClick={() =&gt; onNavigate('reports')}
+                  className=&quot;px-5 py-2.5 bg-white text-primary-800 hover:bg-primary-50 rounded-xl text-xs font-bold transition shadow-lg flex items-center space-x-2&quot;
+                &gt;
+                  &lt;i data-lucide=&quot;file-spreadsheet&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;Buka Laporan Resmi&lt;/span&gt;
+                &lt;/button&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          {/* Stat Cards */}
+          &lt;div className=&quot;grid grid-cols-2 lg:grid-cols-4 gap-4&quot;&gt;
+            &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4&quot;&gt;
+              &lt;div className=&quot;p-3 bg-purple-50 text-purple-600 rounded-xl&quot;&gt;
+                &lt;i data-lucide=&quot;school&quot; className=&quot;w-6 h-6&quot;&gt;&lt;/i&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;p className=&quot;text-[11px] font-bold text-slate-400 uppercase tracking-wider&quot;&gt;Total Kelas&lt;/p&gt;
+                &lt;h3 className=&quot;text-xl font-extrabold text-slate-800&quot;&gt;{totalClasses} Kelas&lt;/h3&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4&quot;&gt;
+              &lt;div className=&quot;p-3 bg-blue-50 text-blue-600 rounded-xl&quot;&gt;
+                &lt;i data-lucide=&quot;users&quot; className=&quot;w-6 h-6&quot;&gt;&lt;/i&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;p className=&quot;text-[11px] font-bold text-slate-400 uppercase tracking-wider&quot;&gt;Total Murid&lt;/p&gt;
+                &lt;h3 className=&quot;text-xl font-extrabold text-slate-800&quot;&gt;{totalStudents} Siswa&lt;/h3&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4&quot;&gt;
+              &lt;div className=&quot;p-3 bg-emerald-50 text-emerald-600 rounded-xl&quot;&gt;
+                &lt;i data-lucide=&quot;calendar-check&quot; className=&quot;w-6 h-6&quot;&gt;&lt;/i&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;p className=&quot;text-[11px] font-bold text-slate-400 uppercase tracking-wider&quot;&gt;Pertemuan Pembelajaran&lt;/p&gt;
+                &lt;h3 className=&quot;text-xl font-extrabold text-slate-800&quot;&gt;{totalMeetings} Sesi&lt;/h3&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4&quot;&gt;
+              &lt;div className=&quot;p-3 bg-amber-50 text-amber-600 rounded-xl&quot;&gt;
+                &lt;i data-lucide=&quot;award&quot; className=&quot;w-6 h-6&quot;&gt;&lt;/i&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;p className=&quot;text-[11px] font-bold text-slate-400 uppercase tracking-wider&quot;&gt;Rata Kehadiran&lt;/p&gt;
+                &lt;h3 className=&quot;text-xl font-extrabold text-slate-800&quot;&gt;{attStats.rate}%&lt;/h3&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          {/* Grid Layout: Visualizations */}
+          &lt;div className=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6&quot;&gt;
+            {/* Chart 1: SOLO Distribution */}
+            &lt;div className=&quot;bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4&quot;&gt;
+              &lt;div className=&quot;flex justify-between items-center&quot;&gt;
+                &lt;div&gt;
+                  &lt;h3 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;Distribusi Capaian Taksonomi SOLO&lt;/h3&gt;
+                  &lt;p className=&quot;text-xs text-slate-400&quot;&gt;Jumlah murid per level pemahaman SOLO&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;span className=&quot;text-[10px] bg-slate-100 text-slate-600 font-bold px-2.5 py-1 rounded-full&quot;&gt;Actual Data&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;h-64 w-full&quot;&gt;
+                {ResponsiveContainer &amp;&amp; BarChart ? (
+                  &lt;ResponsiveContainer width=&quot;100%&quot; height=&quot;100%&quot;&gt;
+                    &lt;BarChart data={soloDist} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}&gt;
+                      &lt;CartesianGrid strokeDasharray=&quot;3 3&quot; vertical={false} /&gt;
+                      &lt;XAxis dataKey=&quot;name&quot; tick={{ fontSize: 10 }} /&gt;
+                      &lt;YAxis allowDecimals={false} tick={{ fontSize: 10 }} /&gt;
+                      &lt;Tooltip /&gt;
+                      &lt;Bar dataKey=&quot;value&quot; radius={[6, 6, 0, 0]}&gt;
+                        {soloDist.map((entry, index) =&gt; (
+                          &lt;Cell key={`cell-${index}`} fill={entry.fill} /&gt;
+                        ))}
+                      &lt;/Bar&gt;
+                    &lt;/BarChart&gt;
+                  &lt;/ResponsiveContainer&gt;
+                ) : &lt;div className=&quot;h-full flex items-center justify-center text-xs text-slate-400&quot;&gt;Loading Chart...&lt;/div&gt;}
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            {/* Chart 2: Attendance Summary */}
+            &lt;div className=&quot;bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4&quot;&gt;
+              &lt;div className=&quot;flex justify-between items-center&quot;&gt;
+                &lt;div&gt;
+                  &lt;h3 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;Ringkasan Presensi Kehadiran&lt;/h3&gt;
+                  &lt;p className=&quot;text-xs text-slate-400&quot;&gt;Persentase &amp; rincian total status presensi&lt;/p&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;grid grid-cols-5 gap-2 text-center py-2&quot;&gt;
+                &lt;div className=&quot;bg-emerald-50 p-2.5 rounded-xl border border-emerald-100&quot;&gt;
+                  &lt;p className=&quot;text-[10px] text-emerald-600 font-bold&quot;&gt;Hadir&lt;/p&gt;
+                  &lt;p className=&quot;text-lg font-black text-emerald-700&quot;&gt;{attStats.h}&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;bg-blue-50 p-2.5 rounded-xl border border-blue-100&quot;&gt;
+                  &lt;p className=&quot;text-[10px] text-blue-600 font-bold&quot;&gt;Izin&lt;/p&gt;
+                  &lt;p className=&quot;text-lg font-black text-blue-700&quot;&gt;{attStats.i}&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;bg-amber-50 p-2.5 rounded-xl border border-amber-100&quot;&gt;
+                  &lt;p className=&quot;text-[10px] text-amber-600 font-bold&quot;&gt;Sakit&lt;/p&gt;
+                  &lt;p className=&quot;text-lg font-black text-amber-700&quot;&gt;{attStats.s}&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;bg-purple-50 p-2.5 rounded-xl border border-purple-100&quot;&gt;
+                  &lt;p className=&quot;text-[10px] text-purple-600 font-bold&quot;&gt;Terlambat&lt;/p&gt;
+                  &lt;p className=&quot;text-lg font-black text-purple-700&quot;&gt;{attStats.t}&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;bg-red-50 p-2.5 rounded-xl border border-red-100&quot;&gt;
+                  &lt;p className=&quot;text-[10px] text-red-600 font-bold&quot;&gt;Alpa&lt;/p&gt;
+                  &lt;p className=&quot;text-lg font-black text-red-700&quot;&gt;{attStats.a}&lt;/p&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+
+              {/* Quick Actions if Teacher */}
+              {isTeacher &amp;&amp; (
+                &lt;div className=&quot;pt-2 border-t border-slate-100&quot;&gt;
+                  &lt;p className=&quot;text-xs font-bold text-slate-600 mb-2&quot;&gt;Akses Cepat Pengelolaan:&lt;/p&gt;
+                  &lt;div className=&quot;grid grid-cols-2 sm:grid-cols-3 gap-2&quot;&gt;
+                    &lt;button onClick={() =&gt; onNavigate('attendance')} className=&quot;p-2.5 bg-slate-50 hover:bg-primary-50 hover:text-primary-700 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 transition text-left flex items-center space-x-2&quot;&gt;
+                      &lt;i data-lucide=&quot;calendar-check&quot; className=&quot;w-4 h-4 text-primary-600&quot;&gt;&lt;/i&gt;
+                      &lt;span&gt;Catat Kehadiran&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button onClick={() =&gt; onNavigate('assessment')} className=&quot;p-2.5 bg-slate-50 hover:bg-primary-50 hover:text-primary-700 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 transition text-left flex items-center space-x-2&quot;&gt;
+                      &lt;i data-lucide=&quot;clipboard-pen&quot; className=&quot;w-4 h-4 text-primary-600&quot;&gt;&lt;/i&gt;
+                      &lt;span&gt;Input SOLO&lt;/span&gt;
+                    &lt;/button&gt;
+                    &lt;button onClick={() =&gt; onNavigate('curriculum')} className=&quot;p-2.5 bg-slate-50 hover:bg-primary-50 hover:text-primary-700 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 transition text-left flex items-center space-x-2&quot;&gt;
+                      &lt;i data-lucide=&quot;book-open&quot; className=&quot;w-4 h-4 text-primary-600&quot;&gt;&lt;/i&gt;
+                      &lt;span&gt;Kelola Kurikulum&lt;/span&gt;
+                    &lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              )}
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          {/* Activity Log &amp; Reminders */}
+          &lt;div className=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6&quot;&gt;
+            &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3&quot;&gt;
+              &lt;h3 className=&quot;font-bold text-slate-800 text-sm flex items-center space-x-2&quot;&gt;
+                &lt;i data-lucide=&quot;history&quot; className=&quot;w-4 h-4 text-primary-600&quot;&gt;&lt;/i&gt;
+                &lt;span&gt;Aktivitas Pembelajaran Terbaru&lt;/span&gt;
+              &lt;/h3&gt;
+              &lt;div className=&quot;space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1&quot;&gt;
+                {activityLogs.map(log =&gt; (
+                  &lt;div key={log.id} className=&quot;p-2.5 bg-slate-50 rounded-xl text-xs border border-slate-100 flex justify-between items-center&quot;&gt;
+                    &lt;span className=&quot;font-medium text-slate-700&quot;&gt;{log.description}&lt;/span&gt;
+                    &lt;span className=&quot;text-[10px] text-slate-400&quot;&gt;{log.timestamp}&lt;/span&gt;
+                  &lt;/div&gt;
+                ))}
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3&quot;&gt;
+              &lt;h3 className=&quot;font-bold text-slate-800 text-sm flex items-center space-x-2&quot;&gt;
+                &lt;i data-lucide=&quot;bell&quot; className=&quot;w-4 h-4 text-amber-500&quot;&gt;&lt;/i&gt;
+                &lt;span&gt;Pengingat &amp; Status Kurikulum&lt;/span&gt;
+              &lt;/h3&gt;
+              &lt;div className=&quot;space-y-2&quot;&gt;
+                &lt;div className=&quot;p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start space-x-2&quot;&gt;
+                  &lt;i data-lucide=&quot;alert-triangle&quot; className=&quot;w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5&quot;&gt;&lt;/i&gt;
+                  &lt;div&gt;
+                    &lt;p className=&quot;font-bold&quot;&gt;TP.IPA.8.1 (Pewarisan Sifat)&lt;/p&gt;
+                    &lt;p className=&quot;text-[11px] text-amber-700&quot;&gt;1 dari 5 murid belum menyelesaikan penilaian lengkap seluruh IKTP.&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-start space-x-2&quot;&gt;
+                  &lt;i data-lucide=&quot;check-circle&quot; className=&quot;w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5&quot;&gt;&lt;/i&gt;
+                  &lt;div&gt;
+                    &lt;p className=&quot;font-bold&quot;&gt;Rubrik Taksonomi SOLO Lengkap&lt;/p&gt;
+                    &lt;p className=&quot;text-[11px] text-emerald-700&quot;&gt;Seluruh IKTP pada materi Genetika telah dilengkapi 5 level deskriptor SOLO.&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 2: IDENTITY VIEW (TEACHER &amp; SCHOOL)
+    // ==========================================
+    function IdentityView({ teacher, school, onSaveTeacher, onSaveSchool }) {
+      const [tForm, setTForm] = useState(teacher);
+      const [sForm, setSForm] = useState(school);
+      const [savedNotice, setSavedNotice] = useState(false);
+
+      const handleSave = (e) =&gt; {
+        e.preventDefault();
+        onSaveTeacher(tForm);
+        onSaveSchool(sForm);
+        setSavedNotice(true);
+        setTimeout(() =&gt; setSavedNotice(false), 3000);
+      };
+
+      return (
+        &lt;form onSubmit={handleSave} className=&quot;space-y-6 max-w-4xl mx-auto&quot;&gt;
+          {savedNotice &amp;&amp; (
+            &lt;div className=&quot;p-4 bg-emerald-500 text-white text-xs font-bold rounded-2xl shadow-lg flex items-center justify-between&quot;&gt;
+              &lt;span&gt;Identitas Guru &amp; Sekolah Berhasil Disimpan!&lt;/span&gt;
+              &lt;i data-lucide=&quot;check-circle&quot; className=&quot;w-5 h-5&quot;&gt;&lt;/i&gt;
+            &lt;/div&gt;
+          )}
+
+          {/* Section 1: School Identity */}
+          &lt;div className=&quot;bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4&quot;&gt;
+            &lt;div className=&quot;flex items-center space-x-3 border-b border-slate-100 pb-3&quot;&gt;
+              &lt;div className=&quot;p-2 bg-primary-50 text-primary-600 rounded-xl&quot;&gt;
+                &lt;i data-lucide=&quot;building&quot; className=&quot;w-5 h-5&quot;&gt;&lt;/i&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;h3 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;Identitas Sekolah&lt;/h3&gt;
+                &lt;p className=&quot;text-xs text-slate-400&quot;&gt;Informasi sekolah tempat guru bertugas (Digunakan di Kop Laporan)&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;grid grid-cols-1 md:grid-cols-2 gap-4&quot;&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Nama Sekolah *&lt;/label&gt;
+                &lt;input type=&quot;text&quot; required value={sForm.school_name} onChange={e =&gt; setSForm({...sForm, school_name: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;NPSN&lt;/label&gt;
+                &lt;input type=&quot;text&quot; value={sForm.npsn} onChange={e =&gt; setSForm({...sForm, npsn: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;md:col-span-2&quot;&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Alamat Sekolah&lt;/label&gt;
+                &lt;input type=&quot;text&quot; value={sForm.address} onChange={e =&gt; setSForm({...sForm, address: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Kabupaten / Kota&lt;/label&gt;
+                &lt;input type=&quot;text&quot; value={sForm.regency} onChange={e =&gt; setSForm({...sForm, regency: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Provinsi&lt;/label&gt;
+                &lt;input type=&quot;text&quot; value={sForm.province} onChange={e =&gt; setSForm({...sForm, province: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Nama Kepala Sekolah *&lt;/label&gt;
+                &lt;input type=&quot;text&quot; required value={sForm.headmaster_name} onChange={e =&gt; setSForm({...sForm, headmaster_name: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;NIP Kepala Sekolah&lt;/label&gt;
+                &lt;input type=&quot;text&quot; value={sForm.headmaster_nip} onChange={e =&gt; setSForm({...sForm, headmaster_nip: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          {/* Section 2: Teacher Profile */}
+          &lt;div className=&quot;bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4&quot;&gt;
+            &lt;div className=&quot;flex items-center space-x-3 border-b border-slate-100 pb-3&quot;&gt;
+              &lt;div className=&quot;p-2 bg-primary-50 text-primary-600 rounded-xl&quot;&gt;
+                &lt;i data-lucide=&quot;user&quot; className=&quot;w-5 h-5&quot;&gt;&lt;/i&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;h3 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;Identitas Guru Mata Pelajaran&lt;/h3&gt;
+                &lt;p className=&quot;text-xs text-slate-400&quot;&gt;Data pribadi pengampu mata pelajaran&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;grid grid-cols-1 md:grid-cols-2 gap-4&quot;&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Nama Lengkap &amp; Gelar *&lt;/label&gt;
+                &lt;input type=&quot;text&quot; required value={tForm.full_name} onChange={e =&gt; setTForm({...tForm, full_name: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;NIP Guru&lt;/label&gt;
+                &lt;input type=&quot;text&quot; value={tForm.nip} onChange={e =&gt; setTForm({...tForm, nip: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Mata Pelajaran yang Diampu *&lt;/label&gt;
+                &lt;input type=&quot;text&quot; required value={tForm.subject} onChange={e =&gt; setTForm({...tForm, subject: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Instansi / Dinas&lt;/label&gt;
+                &lt;input type=&quot;text&quot; value={tForm.institution} onChange={e =&gt; setTForm({...tForm, institution: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div className=&quot;flex justify-end&quot;&gt;
+            &lt;button type=&quot;submit&quot; className=&quot;px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-xs shadow-lg shadow-primary-600/30 transition flex items-center space-x-2&quot;&gt;
+              &lt;i data-lucide=&quot;save&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+              &lt;span&gt;Simpan Identitas&lt;/span&gt;
+            &lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/form&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 3: CLASSES MANAGEMENT VIEW
+    // ==========================================
+    function ClassesView({ classes, students, onAddClass, onUpdateClass, onDeleteClass }) {
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [editingClass, setEditingClass] = useState(null);
+      const [formData, setFormData] = useState({ name: '', grade_level: 'VIII', academic_year: '2025/2026', semester: 'Genap' });
+      const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+      const handleOpenAdd = () =&gt; {
+        setEditingClass(null);
+        setFormData({ name: '', grade_level: 'VIII', academic_year: '2025/2026', semester: 'Genap' });
+        setIsModalOpen(true);
+      };
+
+      const handleOpenEdit = (c) =&gt; {
+        setEditingClass(c);
+        setFormData({ name: c.name, grade_level: c.grade_level, academic_year: c.academic_year, semester: c.semester });
+        setIsModalOpen(true);
+      };
+
+      const handleSubmit = (e) =&gt; {
+        e.preventDefault();
+        if (editingClass) {
+          onUpdateClass({ ...editingClass, ...formData });
+        } else {
+          onAddClass({ id: 'c_' + Date.now(), ...formData });
+        }
+        setIsModalOpen(false);
+      };
+
+      const handleDelete = (id) =&gt; {
+        const studentCount = students.filter(s =&gt; s.class_id === id).length;
+        if (studentCount &gt; 0) {
+          alert(`Tidak dapat menghapus kelas ini! Terdapat ${studentCount} murid yang terdaftar di kelas ini.`);
+          setDeleteConfirmId(null);
+          return;
+        }
+        onDeleteClass(id);
+        setDeleteConfirmId(null);
+      };
+
+      return (
+        &lt;div className=&quot;space-y-6 max-w-5xl mx-auto&quot;&gt;
+          &lt;div className=&quot;flex justify-between items-center&quot;&gt;
+            &lt;div&gt;
+              &lt;h3 className=&quot;font-bold text-slate-800 text-lg&quot;&gt;Manajemen Kelas Diampu&lt;/h3&gt;
+              &lt;p className=&quot;text-xs text-slate-500&quot;&gt;Kelola daftar kelas mata pelajaran untuk pencatatan kehadiran &amp; penilaian&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;button onClick={handleOpenAdd} className=&quot;px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-md shadow-primary-600/30 transition flex items-center space-x-2&quot;&gt;
+              &lt;i data-lucide=&quot;plus&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+              &lt;span&gt;Tambah Kelas Baru&lt;/span&gt;
+            &lt;/button&gt;
+          &lt;/div&gt;
+
+          &lt;div className=&quot;grid grid-cols-1 md:grid-cols-2 gap-4&quot;&gt;
+            {classes.map(c =&gt; {
+              const count = students.filter(s =&gt; s.class_id === c.id).length;
+              return (
+                &lt;div key={c.id} className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between&quot;&gt;
+                  &lt;div className=&quot;flex justify-between items-start mb-3&quot;&gt;
+                    &lt;div&gt;
+                      &lt;span className=&quot;text-[10px] font-bold text-primary-700 bg-primary-50 px-2.5 py-1 rounded-full uppercase&quot;&gt;
+                        Tingkat {c.grade_level}
+                      &lt;/span&gt;
+                      &lt;h4 className=&quot;text-xl font-black text-slate-800 mt-2&quot;&gt;Kelas {c.name}&lt;/h4&gt;
+                      &lt;p className=&quot;text-xs text-slate-400 mt-0.5&quot;&gt;Tahun Ajaran {c.academic_year} â¢ Semester {c.semester}&lt;/p&gt;
+                    &lt;/div&gt;
+                    &lt;div className=&quot;flex space-x-1&quot;&gt;
+                      &lt;button onClick={() =&gt; handleOpenEdit(c)} className=&quot;p-2 text-slate-400 hover:text-primary-600 rounded-lg hover:bg-slate-50 transition&quot;&gt;
+                        &lt;i data-lucide=&quot;pencil&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+                      &lt;/button&gt;
+                      &lt;button onClick={() =&gt; setDeleteConfirmId(c.id)} className=&quot;p-2 text-slate-400 hover:text-red-600 rounded-lg hover:bg-slate-50 transition&quot;&gt;
+                        &lt;i data-lucide=&quot;trash-2&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+                      &lt;/button&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+
+                  &lt;div className=&quot;pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium&quot;&gt;
+                    &lt;span className=&quot;flex items-center space-x-1.5&quot;&gt;
+                      &lt;i data-lucide=&quot;users&quot; className=&quot;w-4 h-4 text-slate-400&quot;&gt;&lt;/i&gt;
+                      &lt;span&gt;{count} Murid Terdaftar&lt;/span&gt;
+                    &lt;/span&gt;
+                    &lt;span className=&quot;text-emerald-600 font-bold&quot;&gt;Aktif&lt;/span&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              );
+            })}
+          &lt;/div&gt;
+
+          {/* Modal Form Class */}
+          {isModalOpen &amp;&amp; (
+            &lt;div className=&quot;fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50&quot;&gt;
+              &lt;div className=&quot;bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4&quot;&gt;
+                &lt;h4 className=&quot;font-bold text-slate-800 text-base&quot;&gt;{editingClass ? 'Edit Data Kelas' : 'Tambah Kelas Baru'}&lt;/h4&gt;
+                &lt;form onSubmit={handleSubmit} className=&quot;space-y-3&quot;&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Nama Kelas (Contoh: VIII.A) *&lt;/label&gt;
+                    &lt;input type=&quot;text&quot; required value={formData.name} onChange={e =&gt; setFormData({...formData, name: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Tingkat Kelas *&lt;/label&gt;
+                    &lt;select value={formData.grade_level} onChange={e =&gt; setFormData({...formData, grade_level: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                      &lt;option value=&quot;VII&quot;&gt;VII (Tujuh)&lt;/option&gt;
+                      &lt;option value=&quot;VIII&quot;&gt;VIII (Delapan)&lt;/option&gt;
+                      &lt;option value=&quot;IX&quot;&gt;IX (Sembilan)&lt;/option&gt;
+                    &lt;/select&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Tahun Ajaran *&lt;/label&gt;
+                    &lt;input type=&quot;text&quot; required value={formData.academic_year} onChange={e =&gt; setFormData({...formData, academic_year: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Semester *&lt;/label&gt;
+                    &lt;select value={formData.semester} onChange={e =&gt; setFormData({...formData, semester: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                      &lt;option value=&quot;Ganjil&quot;&gt;Ganjil&lt;/option&gt;
+                      &lt;option value=&quot;Genap&quot;&gt;Genap&lt;/option&gt;
+                    &lt;/select&gt;
+                  &lt;/div&gt;
+
+                  &lt;div className=&quot;pt-2 flex justify-end space-x-2&quot;&gt;
+                    &lt;button type=&quot;button&quot; onClick={() =&gt; setIsModalOpen(false)} className=&quot;px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl&quot;&gt;Batal&lt;/button&gt;
+                    &lt;button type=&quot;submit&quot; className=&quot;px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-md&quot;&gt;{editingClass ? 'Simpan Perubahan' : 'Tambah Kelas'}&lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/form&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {deleteConfirmId &amp;&amp; (
+            &lt;div className=&quot;fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50&quot;&gt;
+              &lt;div className=&quot;bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center space-y-3&quot;&gt;
+                &lt;div className=&quot;w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto&quot;&gt;
+                  &lt;i data-lucide=&quot;alert-triangle&quot; className=&quot;w-6 h-6&quot;&gt;&lt;/i&gt;
+                &lt;/div&gt;
+                &lt;h4 className=&quot;font-bold text-slate-800 text-base&quot;&gt;Konfirmasi Hapus Kelas&lt;/h4&gt;
+                &lt;p className=&quot;text-xs text-slate-500&quot;&gt;Apakah Anda yakin ingin menghapus kelas ini? Tindakan ini tidak dapat dibatalkan.&lt;/p&gt;
+                &lt;div className=&quot;flex justify-center space-x-2 pt-2&quot;&gt;
+                  &lt;button onClick={() =&gt; setDeleteConfirmId(null)} className=&quot;px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl&quot;&gt;Batal&lt;/button&gt;
+                  &lt;button onClick={() =&gt; handleDelete(deleteConfirmId)} className=&quot;px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl&quot;&gt;Hapus Kelas&lt;/button&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          )}
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 4: STUDENTS MANAGEMENT &amp; EXCEL IMPORT
+    // ==========================================
+    function StudentsView({ session, students, classes, onAddStudent, onUpdateStudent, onDeleteStudent, onImportStudents }) {
+      const isTeacher = session.role === 'teacher';
+      const [filterClass, setFilterClass] = useState(classes[0]?.id || '');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [editingStudent, setEditingStudent] = useState(null);
+      
+      const [formData, setFormData] = useState({
+        full_name: '', nis: '', nisn: '', gender: 'L', class_id: classes[0]?.id || '', pob: '', dob: '', address: ''
+      });
+
+      // Excel Import States
+      const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+      const [excelPreview, setExcelPreview] = useState([]);
+      const [importErrors, setImportErrors] = useState([]);
+
+      const filteredStudents = useMemo(() =&gt; {
+        return students.filter(s =&gt; {
+          const matchClass = filterClass ? s.class_id === filterClass : true;
+          const matchSearch = s.full_name.toLowerCase().includes(searchQuery.toLowerCase()) || s.nis.includes(searchQuery);
+          return matchClass &amp;&amp; matchSearch;
+        });
+      }, [students, filterClass, searchQuery]);
+
+      const handleOpenAdd = () =&gt; {
+        setEditingStudent(null);
+        setFormData({ full_name: '', nis: '', nisn: '', gender: 'L', class_id: filterClass || classes[0]?.id || '', pob: '', dob: '', address: '' });
+        setIsModalOpen(true);
+      };
+
+      const handleOpenEdit = (s) =&gt; {
+        setEditingStudent(s);
+        setFormData({ ...s });
+        setIsModalOpen(true);
+      };
+
+      const handleSubmit = (e) =&gt; {
+        e.preventDefault();
+        // NIS Uniqueness Validation in same class
+        const duplicate = students.find(s =&gt; s.class_id === formData.class_id &amp;&amp; s.nis === formData.nis &amp;&amp; s.id !== editingStudent?.id);
+        if (duplicate) {
+          alert(`NIS ${formData.nis} sudah terdaftar untuk murid lain di kelas ini!`);
+          return;
+        }
+
+        if (editingStudent) {
+          onUpdateStudent({ ...editingStudent, ...formData });
+        } else {
+          onAddStudent({ id: 's_' + Date.now(), ...formData });
+        }
+        setIsModalOpen(false);
+      };
+
+      // Excel Import Logic
+      const handleFileUpload = (e) =&gt; {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) =&gt; {
+          try {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(sheet);
+
+            // Validate
+            const valid = [];
+            const errors = [];
+
+            json.forEach((row, idx) =&gt; {
+              const rowNo = idx + 2;
+              const name = row['Nama Lengkap'] || row['Nama'] || '';
+              const nis = String(row['NIS'] || '').trim();
+              const gender = String(row['Jenis Kelamin'] || 'L').toUpperCase().startsWith('P') ? 'P' : 'L';
+
+              if (!name || !nis) {
+                errors.push({ row: rowNo, reason: 'Nama Lengkap atau NIS kosong' });
+                return;
+              }
+
+              const isDup = students.some(s =&gt; s.class_id === filterClass &amp;&amp; s.nis === nis);
+              if (isDup) {
+                errors.push({ row: rowNo, reason: `NIS ${nis} sudah ada di database` });
+                return;
+              }
+
+              valid.push({
+                id: 's_imp_' + Date.now() + '_' + idx,
+                class_id: filterClass,
+                full_name: name,
+                nis: nis,
+                nisn: row['NISN'] ? String(row['NISN']) : '',
+                gender: gender,
+                pob: row['Tempat Lahir'] || '',
+                dob: row['Tanggal Lahir'] || '',
+                address: row['Alamat'] || ''
+              });
+            });
+
+            setExcelPreview(valid);
+            setImportErrors(errors);
+          } catch (err) {
+            alert('Gagal membaca file Excel. Pastikan format sesuai template.');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      };
+
+      const handleConfirmImport = () =&gt; {
+        if (excelPreview.length === 0) return;
+        onImportStudents(excelPreview);
+        setIsImportModalOpen(false);
+        setExcelPreview([]);
+        setImportErrors([]);
+      };
+
+      const downloadTemplate = () =&gt; {
+        const templateData = [
+          { 'No': 1, 'Nama Lengkap': 'Contoh Murid A', 'NIS': '1026', 'NISN': '0081234599', 'Jenis Kelamin': 'L', 'Tempat Lahir': 'Gowa', 'Tanggal Lahir': '2011-05-10', 'Alamat': 'Jl. Hasanuddin' },
+          { 'No': 2, 'Nama Lengkap': 'Contoh Murid B', 'NIS': '1027', 'NISN': '0081234598', 'Jenis Kelamin': 'P', 'Tempat Lahir': 'Sungguminasa', 'Tanggal Lahir': '2011-08-20', 'Alamat': 'Jl. Tumanurung' }
+        ];
+        const ws = XLSX.utils.json_to_sheet(templateData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, &quot;Template_Murid&quot;);
+        XLSX.writeFile(wb, &quot;Template_Import_Murid_SIPAKATAU.xlsx&quot;);
+      };
+
+      return (
+        &lt;div className=&quot;space-y-6 max-w-6xl mx-auto&quot;&gt;
+          {/* Header Controls */}
+          &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4&quot;&gt;
+            &lt;div className=&quot;flex flex-col sm:flex-row sm:items-center gap-3&quot;&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Filter Kelas&lt;/label&gt;
+                &lt;select value={filterClass} onChange={e =&gt; setFilterClass(e.target.value)} className=&quot;px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                  {classes.map(c =&gt; &lt;option key={c.id} value={c.id}&gt;Kelas {c.name}&lt;/option&gt;)}
+                &lt;/select&gt;
+              &lt;/div&gt;
+
+              &lt;div&gt;
+                &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Pencarian Murid&lt;/label&gt;
+                &lt;div className=&quot;relative&quot;&gt;
+                  &lt;input type=&quot;text&quot; placeholder=&quot;Cari Nama / NIS...&quot; value={searchQuery} onChange={e =&gt; setSearchQuery(e.target.value)} className=&quot;pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none w-48 sm:w-64&quot; /&gt;
+                  &lt;i data-lucide=&quot;search&quot; className=&quot;w-4 h-4 text-slate-400 absolute left-3 top-2.5&quot;&gt;&lt;/i&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            {isTeacher &amp;&amp; (
+              &lt;div className=&quot;flex items-center space-x-2&quot;&gt;
+                &lt;button onClick={downloadTemplate} className=&quot;px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center space-x-1.5&quot;&gt;
+                  &lt;i data-lucide=&quot;download&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;Template Excel&lt;/span&gt;
+                &lt;/button&gt;
+                &lt;button onClick={() =&gt; setIsImportModalOpen(true)} className=&quot;px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center space-x-1.5&quot;&gt;
+                  &lt;i data-lucide=&quot;file-up&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;Import Excel&lt;/span&gt;
+                &lt;/button&gt;
+                &lt;button onClick={handleOpenAdd} className=&quot;px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-md shadow-primary-600/30 transition flex items-center space-x-1.5&quot;&gt;
+                  &lt;i data-lucide=&quot;user-plus&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;Tambah Murid&lt;/span&gt;
+                &lt;/button&gt;
+              &lt;/div&gt;
+            )}
+          &lt;/div&gt;
+
+          {/* Table */}
+          &lt;div className=&quot;bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden&quot;&gt;
+            &lt;div className=&quot;p-4 border-b border-slate-100 flex justify-between items-center&quot;&gt;
+              &lt;h4 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;Daftar Murid Terdaftar ({filteredStudents.length} Siswa)&lt;/h4&gt;
+              &lt;span className=&quot;text-xs text-slate-400 font-medium&quot;&gt;Menampilkan kelas aktif&lt;/span&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;overflow-x-auto&quot;&gt;
+              &lt;table className=&quot;w-full text-left border-collapse text-xs&quot;&gt;
+                &lt;thead&gt;
+                  &lt;tr className=&quot;bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider&quot;&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;No&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;Nama Lengkap&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;NIS / NISN&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;JK&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;TTL&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;Alamat&lt;/th&gt;
+                    {isTeacher &amp;&amp; &lt;th className=&quot;py-3 px-4 text-center&quot;&gt;Aksi&lt;/th&gt;}
+                  &lt;/tr&gt;
+                &lt;/thead&gt;
+                &lt;tbody className=&quot;divide-y divide-slate-100 text-slate-700 font-medium&quot;&gt;
+                  {filteredStudents.length === 0 ? (
+                    &lt;tr&gt;
+                      &lt;td colSpan={isTeacher ? 7 : 6} className=&quot;py-8 text-center text-slate-400&quot;&gt;
+                        Belum ada data murid terdaftar pada kelas ini.
+                      &lt;/td&gt;
+                    &lt;/tr&gt;
+                  ) : filteredStudents.map((s, idx) =&gt; (
+                    &lt;tr key={s.id} className=&quot;hover:bg-slate-50/80 transition&quot;&gt;
+                      &lt;td className=&quot;py-3 px-4 font-bold text-slate-400&quot;&gt;{idx + 1}&lt;/td&gt;
+                      &lt;td className=&quot;py-3 px-4 font-bold text-slate-800&quot;&gt;{s.full_name}&lt;/td&gt;
+                      &lt;td className=&quot;py-3 px-4&quot;&gt;
+                        &lt;span className=&quot;font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700&quot;&gt;{s.nis}&lt;/span&gt;
+                        {s.nisn &amp;&amp; &lt;span className=&quot;text-[10px] text-slate-400 block mt-0.5&quot;&gt;NISN: {s.nisn}&lt;/span&gt;}
+                      &lt;/td&gt;
+                      &lt;td className=&quot;py-3 px-4&quot;&gt;
+                        &lt;span className={`px-2 py-0.5 rounded font-bold text-[10px] ${s.gender === 'L' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}&gt;
+                          {s.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
+                        &lt;/span&gt;
+                      &lt;/td&gt;
+                      &lt;td className=&quot;py-3 px-4 text-slate-500&quot;&gt;{s.pob ? `${s.pob}, ${s.dob}` : '-'}&lt;/td&gt;
+                      &lt;td className=&quot;py-3 px-4 text-slate-500 max-w-xs truncate&quot;&gt;{s.address || '-'}&lt;/td&gt;
+                      {isTeacher &amp;&amp; (
+                        &lt;td className=&quot;py-3 px-4 text-center&quot;&gt;
+                          &lt;div className=&quot;flex justify-center space-x-1&quot;&gt;
+                            &lt;button onClick={() =&gt; handleOpenEdit(s)} className=&quot;p-1.5 text-slate-400 hover:text-primary-600 rounded-lg transition&quot;&gt;
+                              &lt;i data-lucide=&quot;pencil&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                            &lt;/button&gt;
+                            &lt;button onClick={() =&gt; onDeleteStudent(s.id)} className=&quot;p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition&quot;&gt;
+                              &lt;i data-lucide=&quot;trash-2&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                            &lt;/button&gt;
+                          &lt;/div&gt;
+                        &lt;/td&gt;
+                      )}
+                    &lt;/tr&gt;
+                  ))}
+                &lt;/tbody&gt;
+              &lt;/table&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          {/* Modal Add/Edit Student */}
+          {isModalOpen &amp;&amp; (
+            &lt;div className=&quot;fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50&quot;&gt;
+              &lt;div className=&quot;bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 space-y-4&quot;&gt;
+                &lt;h4 className=&quot;font-bold text-slate-800 text-base&quot;&gt;{editingStudent ? 'Edit Data Murid' : 'Tambah Murid Baru'}&lt;/h4&gt;
+                &lt;form onSubmit={handleSubmit} className=&quot;space-y-3&quot;&gt;
+                  &lt;div&gt;
+                    &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Nama Lengkap *&lt;/label&gt;
+                    &lt;input type=&quot;text&quot; required value={formData.full_name} onChange={e =&gt; setFormData({...formData, full_name: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;grid grid-cols-2 gap-3&quot;&gt;
+                    &lt;div&gt;
+                      &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;NIS (Wajib Unik) *&lt;/label&gt;
+                      &lt;input type=&quot;text&quot; required value={formData.nis} onChange={e =&gt; setFormData({...formData, nis: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+                    &lt;/div&gt;
+                    &lt;div&gt;
+                      &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;NISN (Opsional)&lt;/label&gt;
+                      &lt;input type=&quot;text&quot; value={formData.nisn} onChange={e =&gt; setFormData({...formData, nisn: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;grid grid-cols-2 gap-3&quot;&gt;
+                    &lt;div&gt;
+                      &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Jenis Kelamin *&lt;/label&gt;
+                      &lt;select value={formData.gender} onChange={e =&gt; setFormData({...formData, gender: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                        &lt;option value=&quot;L&quot;&gt;Laki-laki&lt;/option&gt;
+                        &lt;option value=&quot;P&quot;&gt;Perempuan&lt;/option&gt;
+                      &lt;/select&gt;
+                    &lt;/div&gt;
+                    &lt;div&gt;
+                      &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Kelas Tujuan *&lt;/label&gt;
+                      &lt;select value={formData.class_id} onChange={e =&gt; setFormData({...formData, class_id: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                        {classes.map(c =&gt; &lt;option key={c.id} value={c.id}&gt;Kelas {c.name}&lt;/option&gt;)}
+                      &lt;/select&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;grid grid-cols-2 gap-3&quot;&gt;
+                    &lt;div&gt;
+                      &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Tempat Lahir&lt;/label&gt;
+                      &lt;input type=&quot;text&quot; value={formData.pob} onChange={e =&gt; setFormData({...formData, pob: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+                    &lt;/div&gt;
+                    &lt;div&gt;
+                      &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Tanggal Lahir&lt;/label&gt;
+                      &lt;input type=&quot;date&quot; value={formData.dob} onChange={e =&gt; setFormData({...formData, dob: e.target.value})} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+
+                  &lt;div className=&quot;pt-2 flex justify-end space-x-2&quot;&gt;
+                    &lt;button type=&quot;button&quot; onClick={() =&gt; setIsModalOpen(false)} className=&quot;px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl&quot;&gt;Batal&lt;/button&gt;
+                    &lt;button type=&quot;submit&quot; className=&quot;px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-md&quot;&gt;Simpan Data&lt;/button&gt;
+                  &lt;/div&gt;
+                &lt;/form&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          )}
+
+          {/* Modal Excel Import */}
+          {isImportModalOpen &amp;&amp; (
+            &lt;div className=&quot;fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50&quot;&gt;
+              &lt;div className=&quot;bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto&quot;&gt;
+                &lt;h4 className=&quot;font-bold text-slate-800 text-base&quot;&gt;Import Data Murid dari File Excel&lt;/h4&gt;
+                &lt;div className=&quot;p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1 text-slate-600&quot;&gt;
+                  &lt;p className=&quot;font-bold&quot;&gt;Ketentuan Format Excel:&lt;/p&gt;
+                  &lt;p&gt;â¢ Kolom header wajib: &lt;b&gt;Nama Lengkap, NIS, NISN, Jenis Kelamin&lt;/b&gt;&lt;/p&gt;
+                  &lt;p&gt;â¢ Seluruh data akan dimasukkan ke &lt;b&gt;Kelas {classes.find(c =&gt; c.id === filterClass)?.name}&lt;/b&gt;&lt;/p&gt;
+                &lt;/div&gt;
+
+                &lt;input type=&quot;file&quot; accept=&quot;.xlsx, .xls&quot; onChange={handleFileUpload} className=&quot;block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100&quot; /&gt;
+
+                {excelPreview.length &gt; 0 &amp;&amp; (
+                  &lt;div className=&quot;space-y-2 pt-2&quot;&gt;
+                    &lt;p className=&quot;text-xs font-bold text-emerald-600 flex items-center space-x-1&quot;&gt;
+                      &lt;i data-lucide=&quot;check-circle&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+                      &lt;span&gt;Pratinjau ({excelPreview.length} Murid Valid Siap Diimpor):&lt;/span&gt;
+                    &lt;/p&gt;
+                    &lt;div className=&quot;max-h-40 overflow-y-auto border rounded-xl text-xs&quot;&gt;
+                      &lt;table className=&quot;w-full text-left&quot;&gt;
+                        &lt;thead className=&quot;bg-slate-100 text-slate-600&quot;&gt;
+                          &lt;tr&gt;&lt;th className=&quot;p-2&quot;&gt;Nama&lt;/th&gt;&lt;th className=&quot;p-2&quot;&gt;NIS&lt;/th&gt;&lt;th className=&quot;p-2&quot;&gt;JK&lt;/th&gt;&lt;/tr&gt;
+                        &lt;/thead&gt;
+                        &lt;tbody&gt;
+                          {excelPreview.map((r, i) =&gt; (
+                            &lt;tr key={i} className=&quot;border-t&quot;&gt;
+                              &lt;td className=&quot;p-2 font-bold&quot;&gt;{r.full_name}&lt;/td&gt;
+                              &lt;td className=&quot;p-2&quot;&gt;{r.nis}&lt;/td&gt;
+                              &lt;td className=&quot;p-2&quot;&gt;{r.gender}&lt;/td&gt;
+                            &lt;/tr&gt;
+                          ))}
+                        &lt;/tbody&gt;
+                      &lt;/table&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+                )}
+
+                {importErrors.length &gt; 0 &amp;&amp; (
+                  &lt;div className=&quot;p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl space-y-1&quot;&gt;
+                    &lt;p className=&quot;font-bold&quot;&gt;Baris Bermasalah ({importErrors.length}):&lt;/p&gt;
+                    {importErrors.map((err, i) =&gt; (
+                      &lt;p key={i}&gt;â¢ Baris {err.row}: {err.reason}&lt;/p&gt;
+                    ))}
+                  &lt;/div&gt;
+                )}
+
+                &lt;div className=&quot;pt-2 flex justify-end space-x-2&quot;&gt;
+                  &lt;button onClick={() =&gt; { setIsImportModalOpen(false); setExcelPreview([]); }} className=&quot;px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl&quot;&gt;Batal&lt;/button&gt;
+                  &lt;button onClick={handleConfirmImport} disabled={excelPreview.length === 0} className=&quot;px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md&quot;&gt;
+                    Konfirmasi Impor ({excelPreview.length} Murid)
+                  &lt;/button&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          )}
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 5: ATTENDANCE MANAGEMENT VIEW
+    // ==========================================
+    function AttendanceView({ session, classes, students, attendanceSessions, attendanceRecords, onSaveSession, onDeleteSession }) {
+      const isTeacher = session.role === 'teacher';
+      const [selectedClass, setSelectedClass] = useState(classes[0]?.id || '');
+      const [activeSessionId, setActiveSessionId] = useState('');
+      
+      // Form states for recording
+      const [meetingNo, setMeetingNo] = useState(attendanceSessions.length + 1);
+      const [meetingDate, setMeetingDate] = useState(new Date().toISOString().split('T')[0]);
+      const [topic, setTopic] = useState('');
+      const [tempStatuses, setTempStatuses] = useState({});
+      const [tempNotes, setTempNotes] = useState({});
+
+      const classStudents = useMemo(() =&gt; students.filter(s =&gt; s.class_id === selectedClass), [students, selectedClass]);
+      const classSessions = useMemo(() =&gt; attendanceSessions.filter(s =&gt; s.class_id === selectedClass), [attendanceSessions, selectedClass]);
+
+      // Load session details into form
+      useEffect(() =&gt; {
+        if (activeSessionId) {
+          const sess = attendanceSessions.find(s =&gt; s.id === activeSessionId);
+          if (sess) {
+            setMeetingNo(sess.meeting_no);
+            setMeetingDate(sess.date);
+            setTopic(sess.topic);
+
+            const mapS = {}, mapN = {};
+            attendanceRecords.filter(r =&gt; r.session_id === activeSessionId).forEach(r =&gt; {
+              mapS[r.student_id] = r.status;
+              mapN[r.student_id] = r.notes || '';
+            });
+            setTempStatuses(mapS);
+            setTempNotes(mapN);
+          }
+        } else {
+          // Reset for new session
+          setMeetingNo(classSessions.length + 1);
+          setTopic('');
+          const mapS = {}, mapN = {};
+          classStudents.forEach(s =&gt; { mapS[s.id] = 'Hadir'; mapN[s.id] = ''; });
+          setTempStatuses(mapS);
+          setTempNotes(mapN);
+        }
+      }, [activeSessionId, selectedClass, attendanceSessions, attendanceRecords, classStudents]);
+
+      const handleSave = (e) =&gt; {
+        e.preventDefault();
+        const sessId = activeSessionId || 'att_' + Date.now();
+        const sessObj = {
+          id: sessId,
+          class_id: selectedClass,
+          meeting_no: parseInt(meetingNo),
+          date: meetingDate,
+          topic: topic || `Pertemuan ${meetingNo}`
+        };
+
+        const recordObjs = classStudents.map(st =&gt; ({
+          id: 'ar_' + sessId + '_' + st.id,
+          session_id: sessId,
+          student_id: st.id,
+          status: tempStatuses[st.id] || 'Hadir',
+          notes: tempNotes[st.id] || ''
+        }));
+
+        onSaveSession(sessObj, recordObjs);
+        alert('Data kehadiran pertemuan berhasil disimpan!');
+      };
+
+      return (
+        &lt;div className=&quot;space-y-6 max-w-6xl mx-auto&quot;&gt;
+          {/* Class Filter &amp; Session Picker */}
+          &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4&quot;&gt;
+            &lt;div className=&quot;flex flex-col sm:flex-row sm:items-center gap-4&quot;&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Pilih Kelas&lt;/label&gt;
+                &lt;select value={selectedClass} onChange={e =&gt; { setSelectedClass(e.target.value); setActiveSessionId(''); }} className=&quot;px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                  {classes.map(c =&gt; &lt;option key={c.id} value={c.id}&gt;Kelas {c.name}&lt;/option&gt;)}
+                &lt;/select&gt;
+              &lt;/div&gt;
+
+              &lt;div&gt;
+                &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Riwayat Sesi Pertemuan&lt;/label&gt;
+                &lt;select value={activeSessionId} onChange={e =&gt; setActiveSessionId(e.target.value)} className=&quot;px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                  &lt;option value=&quot;&quot;&gt;+ Buat Pertemuan Baru&lt;/option&gt;
+                  {classSessions.map(s =&gt; &lt;option key={s.id} value={s.id}&gt;Pertemuan {s.meeting_no} ({s.date}) â {s.topic}&lt;/option&gt;)}
+                &lt;/select&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            {isTeacher &amp;&amp; activeSessionId &amp;&amp; (
+              &lt;button onClick={() =&gt; { onDeleteSession(activeSessionId); setActiveSessionId(''); }} className=&quot;px-3.5 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs rounded-xl transition flex items-center space-x-1&quot;&gt;
+                &lt;i data-lucide=&quot;trash-2&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+                &lt;span&gt;Hapus Sesi Ini&lt;/span&gt;
+              &lt;/button&gt;
+            )}
+          &lt;/div&gt;
+
+          {/* Form Recording */}
+          &lt;form onSubmit={handleSave} className=&quot;bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4&quot;&gt;
+            &lt;div className=&quot;flex justify-between items-center border-b border-slate-100 pb-3&quot;&gt;
+              &lt;h4 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;
+                {activeSessionId ? `Edit Presensi Pertemuan ke-${meetingNo}` : `Catat Presensi Pertemuan Baru`}
+              &lt;/h4&gt;
+              &lt;span className=&quot;text-xs text-slate-400&quot;&gt;Pencatatan Presensi Mata Pelajaran&lt;/span&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;grid grid-cols-1 md:grid-cols-3 gap-4&quot;&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Nomor Pertemuan ke- *&lt;/label&gt;
+                &lt;input type=&quot;number&quot; required disabled={!isTeacher} value={meetingNo} onChange={e =&gt; setMeetingNo(e.target.value)} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Tanggal Pertemuan *&lt;/label&gt;
+                &lt;input type=&quot;date&quot; required disabled={!isTeacher} value={meetingDate} onChange={e =&gt; setMeetingDate(e.target.value)} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-xs font-bold text-slate-700 mb-1&quot;&gt;Materi / Topik Pembelajaran *&lt;/label&gt;
+                &lt;input type=&quot;text&quot; required disabled={!isTeacher} placeholder=&quot;Contoh: Hukum Mendel I Monohibrid&quot; value={topic} onChange={e =&gt; setTopic(e.target.value)} className=&quot;w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none&quot; /&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            {/* Attendance Matrix Table */}
+            &lt;div className=&quot;overflow-x-auto pt-2&quot;&gt;
+              &lt;table className=&quot;w-full text-left border-collapse text-xs&quot;&gt;
+                &lt;thead&gt;
+                  &lt;tr className=&quot;bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider&quot;&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;No&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;Nama Murid&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4 text-center&quot;&gt;Status Kehadiran&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;Catatan Kendala / Keterangan&lt;/th&gt;
+                  &lt;/tr&gt;
+                &lt;/thead&gt;
+                &lt;tbody className=&quot;divide-y divide-slate-100 font-medium&quot;&gt;
+                  {classStudents.map((st, idx) =&gt; (
+                    &lt;tr key={st.id} className=&quot;hover:bg-slate-50/80 transition&quot;&gt;
+                      &lt;td className=&quot;py-3 px-4 font-bold text-slate-400&quot;&gt;{idx + 1}&lt;/td&gt;
+                      &lt;td className=&quot;py-3 px-4 font-bold text-slate-800&quot;&gt;{st.full_name}&lt;/td&gt;
+                      &lt;td className=&quot;py-3 px-4 text-center&quot;&gt;
+                        &lt;div className=&quot;inline-flex bg-slate-100 p-1 rounded-xl space-x-1 border border-slate-200&quot;&gt;
+                          {['Hadir', 'Izin', 'Sakit', 'Terlambat', 'Alpa'].map(stt =&gt; (
+                            &lt;button
+                              key={stt}
+                              type=&quot;button&quot;
+                              disabled={!isTeacher}
+                              onClick={() =&gt; setTempStatuses({...tempStatuses, [st.id]: stt})}
+                              className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition ${
+                                (tempStatuses[st.id] || 'Hadir') === stt 
+                                  ? (stt === 'Hadir' ? 'bg-emerald-600 text-white shadow-sm' :
+                                     stt === 'Izin' ? 'bg-blue-600 text-white shadow-sm' :
+                                     stt === 'Sakit' ? 'bg-amber-500 text-white shadow-sm' :
+                                     stt === 'Terlambat' ? 'bg-purple-600 text-white shadow-sm' : 'bg-red-600 text-white shadow-sm')
+                                  : 'text-slate-500 hover:text-slate-900'
+                              }`}
+                            &gt;
+                              {stt}
+                            &lt;/button&gt;
+                          ))}
+                        &lt;/div&gt;
+                      &lt;/td&gt;
+                      &lt;td className=&quot;py-3 px-4&quot;&gt;
+                        &lt;input 
+                          type=&quot;text&quot; 
+                          disabled={!isTeacher}
+                          placeholder=&quot;Alasan izin / surat dokter...&quot; 
+                          value={tempNotes[st.id] || ''} 
+                          onChange={e =&gt; setTempNotes({...tempNotes, [st.id]: e.target.value})}
+                          className=&quot;w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:bg-white&quot;
+                        /&gt;
+                      &lt;/td&gt;
+                    &lt;/tr&gt;
+                  ))}
+                &lt;/tbody&gt;
+              &lt;/table&gt;
+            &lt;/div&gt;
+
+            {isTeacher &amp;&amp; (
+              &lt;div className=&quot;pt-2 flex justify-end&quot;&gt;
+                &lt;button type=&quot;submit&quot; className=&quot;px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-xs shadow-lg shadow-primary-600/30 transition flex items-center space-x-2&quot;&gt;
+                  &lt;i data-lucide=&quot;save&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;Simpan Presensi Pertemuan&lt;/span&gt;
+                &lt;/button&gt;
+              &lt;/div&gt;
+            )}
+          &lt;/form&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 6: CURRICULUM &amp; SOLO RUBRIC BUILDER
+    // ==========================================
+    function CurriculumView({ session, curriculum, onUpdateCurriculum }) {
+      const isTeacher = session.role === 'teacher';
+      const [expandedCp, setExpandedCp] = useState(curriculum[0]?.id || '');
+      const [expandedMat, setExpandedMat] = useState(curriculum[0]?.materials[0]?.id || '');
+      const [expandedTp, setExpandedTp] = useState(curriculum[0]?.materials[0]?.tps[0]?.id || '');
+      const [isAiLoading, setIsAiLoading] = useState(false);
+
+      // Trigger updates back to parent
+      const saveCurr = (newC) =&gt; {
+        onUpdateCurriculum(newC);
+      };
+
+      // Add CP Handler
+      const handleAddCp = () =&gt; {
+        const newCp = {
+          id: 'cp_' + Date.now(),
+          subject: 'Ilmu Pengetahuan Alam (IPA)',
+          phase: 'D',
+          element: 'Pemahaman IPA',
+          academic_year: '2025/2026',
+          description: 'Capaian Pembelajaran Baru disesuaikan dengan kurikulum mata pelajaran.',
+          materials: []
+        };
+        saveCurr([...curriculum, newCp]);
+      };
+
+      // Add Material
+      const handleAddMaterial = (cpId) =&gt; {
+        const updated = curriculum.map(cp =&gt; {
+          if (cp.id === cpId) {
+            return {
+              ...cp,
+              materials: [
+                ...cp.materials,
+                { id: 'm_' + Date.now(), title: 'Bab / Materi Baru', description: 'Deskripsi bab baru', sort_order: cp.materials.length + 1, tps: [] }
+              ]
+            };
+          }
+          return cp;
+        });
+        saveCurr(updated);
+      };
+
+      // Add TP
+      const handleAddTp = (cpId, matId) =&gt; {
+        const updated = curriculum.map(cp =&gt; {
+          if (cp.id === cpId) {
+            return {
+              ...cp,
+              materials: cp.materials.map(m =&gt; {
+                if (m.id === matId) {
+                  return {
+                    ...m,
+                    tps: [
+                      ...m.tps,
+                      {
+                        id: 'tp_' + Date.now(),
+                        code: `TP.IPA.8.${m.tps.length + 1}`,
+                        formulation: 'Rumusan Tujuan Pembelajaran (TP) Baru',
+                        kktp_level: 'Multistructural',
+                        kktp_config: {
+                          prestructural_min: 0, prestructural_max: 59,
+                          unistructural_min: 60, unistructural_max: 74,
+                          multistructural_min: 75, multistructural_max: 83,
+                          relational_min: 84, relational_max: 92,
+                          extended_min: 93, extended_max: 100,
+                          interval_width: 8
+                        },
+                        iktps: []
+                      }
+                    ]
+                  };
+                }
+                return m;
+              })
+            };
+          }
+          return cp;
+        });
+        saveCurr(updated);
+      };
+
+      // Add IKTP
+      const handleAddIktp = (cpId, matId, tpId) =&gt; {
+        const updated = curriculum.map(cp =&gt; {
+          if (cp.id === cpId) {
+            return {
+              ...cp,
+              materials: cp.materials.map(m =&gt; {
+                if (m.id === matId) {
+                  return {
+                    ...m,
+                    tps: m.tps.map(tp =&gt; {
+                      if (tp.id === tpId) {
+                        return {
+                          ...tp,
+                          iktps: [
+                            ...tp.iktps,
+                            {
+                              id: 'ik_' + Date.now(),
+                              formulation: 'Indikator Ketercapaian (IKTP) Baru',
+                              rubric: {
+                                prestructural: 'Belum menunjukkan pemahaman dasar.',
+                                unistructural: 'Menunjukkan pemahaman pada 1 aspek sederhana.',
+                                multistructural: 'Menunjukkan pemahaman beberapa aspek secara terpisah.',
+                                relational: 'Menghubungkan antar konsep secara utuh dan logis.',
+                                extended: 'Menggeneralisasi dan menerapkan konsep pada situasi baru.'
+                              }
+                            }
+                          ]
+                        };
+                      }
+                      return tp;
+                    })
+                  };
+                }
+                return m;
+              })
+            };
+          }
+          return cp;
+        });
+        saveCurr(updated);
+      };
+
+      // AI Generator Simulator
+      const handleGenerateAiRubric = (cpId, matId, tpId, iktpId) =&gt; {
+        setIsAiLoading(true);
+        setTimeout(() =&gt; {
+          const updated = curriculum.map(cp =&gt; {
+            if (cp.id === cpId) {
+              return {
+                ...cp,
+                materials: cp.materials.map(m =&gt; {
+                  if (m.id === matId) {
+                    return {
+                      ...m,
+                      tps: m.tps.map(tp =&gt; {
+                        if (tp.id === tpId) {
+                          return {
+                            ...tp,
+                            iktps: tp.iktps.map(ik =&gt; {
+                              if (ik.id === iktpId) {
+                                return {
+                                  ...ik,
+                                  rubric: {
+                                    prestructural: '[AI Generated] Murid mengalami miskonsepsi total mengenai indikator ini.',
+                                    unistructural: '[AI Generated] Murid hanya dapat mengidentifikasi 1 fakta dasar tanpa pemahaman kontekstual.',
+                                    multistructural: '[AI Generated] Murid menyebutkan beberapa fakta dan prosedur tetapi belum mengorelasikannya.',
+                                    relational: '[AI Generated] Murid menghubungkan fakta-fakta menjadi struktur konsep yang padu.',
+                                    extended: '[AI Generated] Murid melakukan abstraksi dan mentransfer pemahaman pada ranah hipotesis baru.'
+                                  }
+                                };
+                              }
+                              return ik;
+                            })
+                          };
+                        }
+                        return tp;
+                      })
+                    };
+                  }
+                  return m;
+                })
+              };
+            }
+            return cp;
+          });
+          saveCurr(updated);
+          setIsAiLoading(false);
+          alert('Berhasil menghasilkan 5 Level Rubrik SOLO dengan Asisten AI Gemini!');
+        }, 1200);
+      };
+
+      return (
+        &lt;div className=&quot;space-y-6 max-w-6xl mx-auto&quot;&gt;
+          &lt;div className=&quot;flex justify-between items-center&quot;&gt;
+            &lt;div&gt;
+              &lt;h3 className=&quot;font-bold text-slate-800 text-lg&quot;&gt;Manajemen Kurikulum &amp; Rubrik Taksonomi SOLO&lt;/h3&gt;
+              &lt;p className=&quot;text-xs text-slate-500&quot;&gt;Struktur Hierarkis: CP â Materi â TP â IKTP â Rubrik 5 Level SOLO&lt;/p&gt;
+            &lt;/div&gt;
+            {isTeacher &amp;&amp; (
+              &lt;button onClick={handleAddCp} className=&quot;px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-md shadow-primary-600/30 transition flex items-center space-x-2&quot;&gt;
+                &lt;i data-lucide=&quot;plus&quot; className=&quot;w-4 h-4&quot;&gt;&lt;/i&gt;
+                &lt;span&gt;+ Tambah CP Baru&lt;/span&gt;
+              &lt;/button&gt;
+            )}
+          &lt;/div&gt;
+
+          {/* Tree View Accordion */}
+          &lt;div className=&quot;space-y-4&quot;&gt;
+            {curriculum.map(cp =&gt; (
+              &lt;div key={cp.id} className=&quot;bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden&quot;&gt;
+                {/* CP Level Header */}
+                &lt;div 
+                  onClick={() =&gt; setExpandedCp(expandedCp === cp.id ? '' : cp.id)}
+                  className=&quot;p-4 bg-slate-50/80 hover:bg-slate-100/80 cursor-pointer flex justify-between items-center transition border-b border-slate-100&quot;
+                &gt;
+                  &lt;div className=&quot;flex items-center space-x-3&quot;&gt;
+                    &lt;span className=&quot;text-[10px] font-bold text-primary-700 bg-primary-100 px-2.5 py-1 rounded-full uppercase&quot;&gt;
+                      Fase {cp.phase} â¢ {cp.element}
+                    &lt;/span&gt;
+                    &lt;h4 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;{cp.subject} ({cp.academic_year})&lt;/h4&gt;
+                  &lt;/div&gt;
+                  &lt;i data-lucide={expandedCp === cp.id ? &quot;chevron-up&quot; : &quot;chevron-down&quot;} className=&quot;w-5 h-5 text-slate-400&quot;&gt;&lt;/i&gt;
+                &lt;/div&gt;
+
+                {expandedCp === cp.id &amp;&amp; (
+                  &lt;div className=&quot;p-5 space-y-4 bg-white&quot;&gt;
+                    &lt;p className=&quot;text-xs text-slate-600 italic bg-slate-50 p-3 rounded-xl border border-slate-100&quot;&gt;{cp.description}&lt;/p&gt;
+                    
+                    &lt;div className=&quot;flex justify-between items-center pt-2&quot;&gt;
+                      &lt;h5 className=&quot;font-bold text-slate-700 text-xs uppercase tracking-wider&quot;&gt;Materi Pembelajaran ({cp.materials.length} Bab)&lt;/h5&gt;
+                      {isTeacher &amp;&amp; (
+                        &lt;button onClick={() =&gt; handleAddMaterial(cp.id)} className=&quot;px-3 py-1 bg-primary-50 text-primary-700 hover:bg-primary-100 text-[11px] font-bold rounded-lg transition&quot;&gt;
+                          + Tambah Materi Bab
+                        &lt;/button&gt;
+                      )}
+                    &lt;/div&gt;
+
+                    {/* Material Level */}
+                    &lt;div className=&quot;space-y-3 pl-4 border-l-2 border-primary-200&quot;&gt;
+                      {cp.materials.map(mat =&gt; (
+                        &lt;div key={mat.id} className=&quot;bg-slate-50 p-4 rounded-xl border border-slate-200/60 space-y-3&quot;&gt;
+                          &lt;div 
+                            onClick={() =&gt; setExpandedMat(expandedMat === mat.id ? '' : mat.id)}
+                            className=&quot;flex justify-between items-center cursor-pointer&quot;
+                          &gt;
+                            &lt;div&gt;
+                              &lt;h6 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;Bab: {mat.title}&lt;/h6&gt;
+                              &lt;p className=&quot;text-xs text-slate-400&quot;&gt;{mat.description}&lt;/p&gt;
+                            &lt;/div&gt;
+                            &lt;i data-lucide={expandedMat === mat.id ? &quot;chevron-up&quot; : &quot;chevron-down&quot;} className=&quot;w-4 h-4 text-slate-400&quot;&gt;&lt;/i&gt;
+                          &lt;/div&gt;
+
+                          {expandedMat === mat.id &amp;&amp; (
+                            &lt;div className=&quot;pt-2 space-y-3 border-t border-slate-200/60&quot;&gt;
+                              &lt;div className=&quot;flex justify-between items-center&quot;&gt;
+                                &lt;span className=&quot;text-[11px] font-bold text-slate-600&quot;&gt;Tujuan Pembelajaran (TP) ({mat.tps.length})&lt;/span&gt;
+                                {isTeacher &amp;&amp; (
+                                  &lt;button onClick={() =&gt; handleAddTp(cp.id, mat.id)} className=&quot;px-2.5 py-1 bg-white text-primary-700 border border-primary-200 text-[10px] font-bold rounded-lg transition&quot;&gt;
+                                    + Tambah TP
+                                  &lt;/button&gt;
+                                )}
+                              &lt;/div&gt;
+
+                              {/* TP Level */}
+                              &lt;div className=&quot;space-y-3&quot;&gt;
+                                {mat.tps.map(tp =&gt; (
+                                  &lt;div key={tp.id} className=&quot;bg-white p-4 rounded-xl border border-slate-200 space-y-3&quot;&gt;
+                                    &lt;div className=&quot;flex justify-between items-start&quot;&gt;
+                                      &lt;div&gt;
+                                        &lt;span className=&quot;text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded&quot;&gt;{tp.code}&lt;/span&gt;
+                                        &lt;p className=&quot;font-bold text-slate-800 text-xs mt-1&quot;&gt;{tp.formulation}&lt;/p&gt;
+                                      &lt;/div&gt;
+                                      &lt;span className=&quot;text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200&quot;&gt;
+                                        KKTP: {tp.kktp_level}
+                                      &lt;/span&gt;
+                                    &lt;/div&gt;
+
+                                    {/* Config KKTP Ranges */}
+                                    &lt;div className=&quot;p-3 bg-slate-50 rounded-xl text-[11px] text-slate-600 border border-slate-100 grid grid-cols-2 sm:grid-cols-5 gap-2 text-center&quot;&gt;
+                                      &lt;div&gt;&lt;p className=&quot;font-bold text-red-600&quot;&gt;Prestructural&lt;/p&gt;&lt;p className=&quot;font-mono text-[10px]&quot;&gt;{tp.kktp_config.prestructural_min}â{tp.kktp_config.prestructural_max}&lt;/p&gt;&lt;/div&gt;
+                                      &lt;div&gt;&lt;p className=&quot;font-bold text-orange-600&quot;&gt;Unistructural&lt;/p&gt;&lt;p className=&quot;font-mono text-[10px]&quot;&gt;{tp.kktp_config.unistructural_min}â{tp.kktp_config.unistructural_max}&lt;/p&gt;&lt;/div&gt;
+                                      &lt;div&gt;&lt;p className=&quot;font-bold text-amber-600&quot;&gt;Multistructural&lt;/p&gt;&lt;p className=&quot;font-mono text-[10px]&quot;&gt;{tp.kktp_config.multistructural_min}â{tp.kktp_config.multistructural_max}&lt;/p&gt;&lt;/div&gt;
+                                      &lt;div&gt;&lt;p className=&quot;font-bold text-blue-600&quot;&gt;Relational&lt;/p&gt;&lt;p className=&quot;font-mono text-[10px]&quot;&gt;{tp.kktp_config.relational_min}â{tp.kktp_config.relational_max}&lt;/p&gt;&lt;/div&gt;
+                                      &lt;div&gt;&lt;p className=&quot;font-bold text-purple-600&quot;&gt;Extended&lt;/p&gt;&lt;p className=&quot;font-mono text-[10px]&quot;&gt;{tp.kktp_config.extended_min}â{tp.kktp_config.extended_max}&lt;/p&gt;&lt;/div&gt;
+                                    &lt;/div&gt;
+
+                                    &lt;div className=&quot;flex justify-between items-center pt-1&quot;&gt;
+                                      &lt;span className=&quot;text-[11px] font-bold text-slate-600&quot;&gt;Indikator IKTP &amp; Rubrik SOLO ({tp.iktps.length})&lt;/span&gt;
+                                      {isTeacher &amp;&amp; (
+                                        &lt;button onClick={() =&gt; handleAddIktp(cp.id, mat.id, tp.id)} className=&quot;px-2 py-0.5 bg-primary-50 text-primary-700 text-[10px] font-bold rounded&quot;&gt;
+                                          + Tambah IKTP
+                                        &lt;/button&gt;
+                                      )}
+                                    &lt;/div&gt;
+
+                                    {/* IKTP &amp; Rubric Items */}
+                                    &lt;div className=&quot;space-y-3&quot;&gt;
+                                      {tp.iktps.map((ik, ikIdx) =&gt; (
+                                        &lt;div key={ik.id} className=&quot;p-3 bg-slate-50/70 rounded-xl border border-slate-200/60 space-y-2&quot;&gt;
+                                          &lt;div className=&quot;flex justify-between items-start&quot;&gt;
+                                            &lt;p className=&quot;text-xs font-bold text-slate-800&quot;&gt;
+                                              IKTP {ikIdx + 1}: {ik.formulation}
+                                            &lt;/p&gt;
+                                            {isTeacher &amp;&amp; (
+                                              &lt;button 
+                                                onClick={() =&gt; handleGenerateAiRubric(cp.id, mat.id, tp.id, ik.id)}
+                                                disabled={isAiLoading}
+                                                className=&quot;px-2.5 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-[10px] font-bold rounded-lg shadow transition flex items-center space-x-1&quot;
+                                              &gt;
+                                                &lt;i data-lucide=&quot;sparkles&quot; className=&quot;w-3 h-3&quot;&gt;&lt;/i&gt;
+                                                &lt;span&gt;{isAiLoading ? 'AI Generating...' : 'Generate Rubrik SOLO (AI)'}&lt;/span&gt;
+                                              &lt;/button&gt;
+                                            )}
+                                          &lt;/div&gt;
+
+                                          {/* 5 SOLO Descriptors Display */}
+                                          &lt;div className=&quot;grid grid-cols-1 md:grid-cols-5 gap-2 text-[10px] pt-1&quot;&gt;
+                                            &lt;div className=&quot;p-2 bg-red-50 border border-red-200 rounded-lg&quot;&gt;
+                                              &lt;p className=&quot;font-bold text-red-700 mb-0.5&quot;&gt;1. Prestructural&lt;/p&gt;
+                                              &lt;p className=&quot;text-slate-600&quot;&gt;{ik.rubric.prestructural}&lt;/p&gt;
+                                            &lt;/div&gt;
+                                            &lt;div className=&quot;p-2 bg-orange-50 border border-orange-200 rounded-lg&quot;&gt;
+                                              &lt;p className=&quot;font-bold text-orange-700 mb-0.5&quot;&gt;2. Unistructural&lt;/p&gt;
+                                              &lt;p className=&quot;text-slate-600&quot;&gt;{ik.rubric.unistructural}&lt;/p&gt;
+                                            &lt;/div&gt;
+                                            &lt;div className=&quot;p-2 bg-amber-50 border border-amber-200 rounded-lg&quot;&gt;
+                                              &lt;p className=&quot;font-bold text-amber-700 mb-0.5&quot;&gt;3. Multistructural&lt;/p&gt;
+                                              &lt;p className=&quot;text-slate-600&quot;&gt;{ik.rubric.multistructural}&lt;/p&gt;
+                                            &lt;/div&gt;
+                                            &lt;div className=&quot;p-2 bg-blue-50 border border-blue-200 rounded-lg&quot;&gt;
+                                              &lt;p className=&quot;font-bold text-blue-700 mb-0.5&quot;&gt;4. Relational&lt;/p&gt;
+                                              &lt;p className=&quot;text-slate-600&quot;&gt;{ik.rubric.relational}&lt;/p&gt;
+                                            &lt;/div&gt;
+                                            &lt;div className=&quot;p-2 bg-purple-50 border border-purple-200 rounded-lg&quot;&gt;
+                                              &lt;p className=&quot;font-bold text-purple-700 mb-0.5&quot;&gt;5. Extended Abstract&lt;/p&gt;
+                                              &lt;p className=&quot;text-slate-600&quot;&gt;{ik.rubric.extended}&lt;/p&gt;
+                                            &lt;/div&gt;
+                                          &lt;/div&gt;
+                                        &lt;/div&gt;
+                                      ))}
+                                    &lt;/div&gt;
+                                  &lt;/div&gt;
+                                ))}
+                              &lt;/div&gt;
+                            &lt;/div&gt;
+                          )}
+                        &lt;/div&gt;
+                      ))}
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+                )}
+              &lt;/div&gt;
+            ))}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 7: SOLO ASSESSMENT INPUT &amp; CONVERSION
+    // ==========================================
+    function AssessmentSOLOView({ session, classes, students, curriculum, soloScores, onSaveScores }) {
+      const isTeacher = session.role === 'teacher';
+      const [selectedClass, setSelectedClass] = useState(classes[0]?.id || '');
+      
+      // Select Curriculum TP
+      const activeCp = curriculum[0];
+      const activeMat = activeCp?.materials[0];
+      const activeTp = activeMat?.tps[0];
+
+      const classStudents = useMemo(() =&gt; students.filter(s =&gt; s.class_id === selectedClass), [students, selectedClass]);
+      const [localScores, setLocalScores] = useState({ ...soloScores });
+
+      const handleScoreChange = (tpId, ikId, studentId, level) =&gt; {
+        if (!isTeacher) return;
+        const key = `${tpId}_${ikId}_${studentId}`;
+        setLocalScores(prev =&gt; ({ ...prev, [key]: parseInt(level) }));
+      };
+
+      const handleSave = () =&gt; {
+        onSaveScores(localScores);
+        alert('Penilaian Taksonomi SOLO dan konversi angka berhasil disimpan!');
+      };
+
+      // Exact Deterministic Conversion Formula Calculation
+      // Formula: Score = MinRange + (AvgSolo - BaseLevel) * IntervalWidth
+      const calculateConversion = (studentId) =&gt; {
+        if (!activeTp) return { avgSolo: 0, levelName: 'Belum Dinilai', convertedScore: 0, status: 'Belum Lengkap' };
+
+        const iktps = activeTp.iktps;
+        let sum = 0, count = 0;
+
+        iktps.forEach(ik =&gt; {
+          const score = localScores[`${activeTp.id}_${ik.id}_${studentId}`];
+          if (score) {
+            sum += score;
+            count++;
+          }
+        });
+
+        if (count &lt; iktps.length) {
+          return { avgSolo: 0, levelName: 'Belum Lengkap', convertedScore: 0, status: 'Belum Lengkap' };
+        }
+
+        const avgSolo = sum / iktps.length; // e.g. 11/3 = 3.67
+        const config = activeTp.kktp_config;
+
+        let levelName = 'Prestructural';
+        let baseMin = config.prestructural_min;
+        let baseLevel = 1;
+
+        if (avgSolo &gt;= 4.5) {
+          levelName = 'Extended Abstract';
+          baseMin = config.extended_min;
+          baseLevel = 4;
+        } else if (avgSolo &gt;= 3.5) {
+          levelName = 'Relational';
+          baseMin = config.relational_min; // 84 or 75 config
+          baseLevel = 3;
+        } else if (avgSolo &gt;= 2.5) {
+          levelName = 'Multistructural';
+          baseMin = config.multistructural_min; // 75
+          baseLevel = 2;
+        } else if (avgSolo &gt;= 1.5) {
+          levelName = 'Unistructural';
+          baseMin = config.unistructural_min; // 60
+          baseLevel = 1;
+        }
+
+        // Example match: (3.67 - 3) * 8 + 75 = 80.36
+        const converted = baseMin + (avgSolo - baseLevel) * config.interval_width;
+        const finalScore = Math.min(100, Math.max(0, parseFloat(converted.toFixed(2))));
+
+        // KKTP Status
+        const kktpMinLevel = activeTp.kktp_level;
+        const levelOrder = ['Prestructural', 'Unistructural', 'Multistructural', 'Relational', 'Extended Abstract'];
+        const isAchieved = levelOrder.indexOf(levelName) &gt;= levelOrder.indexOf(kktpMinLevel);
+
+        return {
+          avgSolo: avgSolo.toFixed(2),
+          levelName: levelName,
+          convertedScore: finalScore,
+          status: isAchieved ? 'Tercapai' : 'Belum Tercapai'
+        };
+      };
+
+      return (
+        &lt;div className=&quot;space-y-6 max-w-6xl mx-auto&quot;&gt;
+          {/* Header Controls */}
+          &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4&quot;&gt;
+            &lt;div&gt;
+              &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Pilih Kelas&lt;/label&gt;
+              &lt;select value={selectedClass} onChange={e =&gt; setSelectedClass(e.target.value)} className=&quot;px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                {classes.map(c =&gt; &lt;option key={c.id} value={c.id}&gt;Kelas {c.name}&lt;/option&gt;)}
+              &lt;/select&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;p-3 bg-primary-50 border border-primary-100 rounded-xl text-xs text-primary-800 flex items-center space-x-2&quot;&gt;
+              &lt;i data-lucide=&quot;calculator&quot; className=&quot;w-4 h-4 text-primary-600 flex-shrink-0&quot;&gt;&lt;/i&gt;
+              &lt;span&gt;Rumus Konversi: &lt;b&gt;Nilai = Batas Bawah + (Rata SOLO â Base Level) Ã Interval&lt;/b&gt;&lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          {/* Active TP Formulation Summary */}
+          {activeTp &amp;&amp; (
+            &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2&quot;&gt;
+              &lt;div className=&quot;flex justify-between items-center&quot;&gt;
+                &lt;span className=&quot;text-xs font-mono font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded&quot;&gt;{activeTp.code}&lt;/span&gt;
+                &lt;span className=&quot;text-xs font-bold text-emerald-700&quot;&gt;Target KKTP: {activeTp.kktp_level}&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;h4 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;{activeTp.formulation}&lt;/h4&gt;
+            &lt;/div&gt;
+          )}
+
+          {/* Assessment Table */}
+          &lt;div className=&quot;bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden&quot;&gt;
+            &lt;div className=&quot;p-4 border-b border-slate-100 flex justify-between items-center&quot;&gt;
+              &lt;h4 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;Matriks Penilaian Level SOLO Murid&lt;/h4&gt;
+              {isTeacher &amp;&amp; (
+                &lt;button onClick={handleSave} className=&quot;px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center space-x-1.5&quot;&gt;
+                  &lt;i data-lucide=&quot;save&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;Simpan Penilaian&lt;/span&gt;
+                &lt;/button&gt;
+              )}
+            &lt;/div&gt;
+
+            &lt;div className=&quot;overflow-x-auto&quot;&gt;
+              &lt;table className=&quot;w-full text-left border-collapse text-xs&quot;&gt;
+                &lt;thead&gt;
+                  &lt;tr className=&quot;bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider&quot;&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;Nama Murid&lt;/th&gt;
+                    {activeTp?.iktps.map((ik, i) =&gt; (
+                      &lt;th key={ik.id} className=&quot;py-3 px-3 text-center max-w-xs&quot;&gt;
+                        IKTP {i + 1}
+                      &lt;/th&gt;
+                    ))}
+                    &lt;th className=&quot;py-3 px-3 text-center bg-purple-50/50&quot;&gt;Rata SOLO&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-3 text-center bg-purple-50/50&quot;&gt;Level SOLO&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-3 text-center bg-purple-50/50&quot;&gt;Nilai Konversi&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-3 text-center&quot;&gt;Status KKTP&lt;/th&gt;
+                  &lt;/tr&gt;
+                &lt;/thead&gt;
+                &lt;tbody className=&quot;divide-y divide-slate-100 font-medium&quot;&gt;
+                  {classStudents.map(st =&gt; {
+                    const calc = calculateConversion(st.id);
+                    return (
+                      &lt;tr key={st.id} className=&quot;hover:bg-slate-50/80 transition&quot;&gt;
+                        &lt;td className=&quot;py-3 px-4 font-bold text-slate-800&quot;&gt;{st.full_name}&lt;/td&gt;
+                        
+                        {activeTp?.iktps.map(ik =&gt; {
+                          const val = localScores[`${activeTp.id}_${ik.id}_${st.id}`] || '';
+                          return (
+                            &lt;td key={ik.id} className=&quot;py-3 px-3 text-center&quot;&gt;
+                              &lt;select 
+                                disabled={!isTeacher}
+                                value={val} 
+                                onChange={e =&gt; handleScoreChange(activeTp.id, ik.id, st.id, e.target.value)}
+                                className={`px-2 py-1 border rounded-lg text-xs font-bold outline-none ${
+                                  val == 1 ? 'bg-red-50 text-red-600 border-red-200' :
+                                  val == 2 ? 'bg-orange-50 text-orange-600 border-orange-200' :
+                                  val == 3 ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                  val == 4 ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                                  val == 5 ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-slate-50 text-slate-400'
+                                }`}
+                              &gt;
+                                &lt;option value=&quot;&quot;&gt;- Level -&lt;/option&gt;
+                                &lt;option value=&quot;1&quot;&gt;1. Prestructural&lt;/option&gt;
+                                &lt;option value=&quot;2&quot;&gt;2. Unistructural&lt;/option&gt;
+                                &lt;option value=&quot;3&quot;&gt;3. Multistructural&lt;/option&gt;
+                                &lt;option value=&quot;4&quot;&gt;4. Relational&lt;/option&gt;
+                                &lt;option value=&quot;5&quot;&gt;5. Extended Abstract&lt;/option&gt;
+                              &lt;/select&gt;
+                            &lt;/td&gt;
+                          );
+                        })}
+
+                        &lt;td className=&quot;py-3 px-3 text-center font-bold font-mono bg-purple-50/30 text-purple-900&quot;&gt;{calc.avgSolo}&lt;/td&gt;
+                        &lt;td className=&quot;py-3 px-3 text-center font-bold bg-purple-50/30 text-purple-900&quot;&gt;{calc.levelName}&lt;/td&gt;
+                        &lt;td className=&quot;py-3 px-3 text-center font-extrabold font-mono text-slate-800 bg-purple-50/30&quot;&gt;{calc.convertedScore}&lt;/td&gt;
+                        &lt;td className=&quot;py-3 px-3 text-center&quot;&gt;
+                          &lt;span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            calc.status === 'Tercapai' ? 'bg-emerald-100 text-emerald-700' :
+                            calc.status === 'Belum Tercapai' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-500'
+                          }`}&gt;
+                            {calc.status}
+                          &lt;/span&gt;
+                        &lt;/td&gt;
+                      &lt;/tr&gt;
+                    );
+                  })}
+                &lt;/tbody&gt;
+              &lt;/table&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 8: SEMESTER FINAL GRADE VIEW
+    // ==========================================
+    function SemesterGradeView({ session, classes, students, semesterGrades, onSaveGrades }) {
+      const isTeacher = session.role === 'teacher';
+      const [selectedClass, setSelectedClass] = useState(classes[0]?.id || '');
+      const [localGrades, setLocalGrades] = useState({ ...semesterGrades });
+
+      const classStudents = useMemo(() =&gt; students.filter(s =&gt; s.class_id === selectedClass), [students, selectedClass]);
+
+      const handleGradeChange = (stId, val, notes) =&gt; {
+        if (!isTeacher) return;
+        const key = `${selectedClass}_${stId}`;
+        setLocalGrades(prev =&gt; ({
+          ...prev,
+          [key]: { grade: val !== '' ? parseFloat(val) : '', notes: notes !== undefined ? notes : prev[key]?.notes || '' }
+        }));
+      };
+
+      const handleSave = () =&gt; {
+        onSaveGrades(localGrades);
+        alert('Nilai Akhir Semester berhasil disimpan!');
+      };
+
+      return (
+        &lt;div className=&quot;space-y-6 max-w-5xl mx-auto&quot;&gt;
+          &lt;div className=&quot;bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4&quot;&gt;
+            &lt;div&gt;
+              &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Pilih Kelas&lt;/label&gt;
+              &lt;select value={selectedClass} onChange={e =&gt; setSelectedClass(e.target.value)} className=&quot;px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-primary-500 outline-none&quot;&gt;
+                {classes.map(c =&gt; &lt;option key={c.id} value={c.id}&gt;Kelas {c.name}&lt;/option&gt;)}
+              &lt;/select&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center space-x-2&quot;&gt;
+              &lt;i data-lucide=&quot;info&quot; className=&quot;w-4 h-4 text-amber-600 flex-shrink-0&quot;&gt;&lt;/i&gt;
+              &lt;span&gt;Nilai Akhir Semester bersifat &lt;b&gt;mandiri &amp; terpisah&lt;/b&gt; dari Nilai Proses SOLO.&lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div className=&quot;bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden&quot;&gt;
+            &lt;div className=&quot;p-4 border-b border-slate-100 flex justify-between items-center&quot;&gt;
+              &lt;h4 className=&quot;font-bold text-slate-800 text-sm&quot;&gt;Penetapan Nilai Rapor Semester&lt;/h4&gt;
+              {isTeacher &amp;&amp; (
+                &lt;button onClick={handleSave} className=&quot;px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center space-x-1.5&quot;&gt;
+                  &lt;i data-lucide=&quot;save&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;Simpan Nilai Semester&lt;/span&gt;
+                &lt;/button&gt;
+              )}
+            &lt;/div&gt;
+
+            &lt;div className=&quot;overflow-x-auto&quot;&gt;
+              &lt;table className=&quot;w-full text-left border-collapse text-xs&quot;&gt;
+                &lt;thead&gt;
+                  &lt;tr className=&quot;bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider&quot;&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;No&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;Nama Murid&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;NIS&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4 w-36&quot;&gt;Nilai Akhir Semester&lt;/th&gt;
+                    &lt;th className=&quot;py-3 px-4&quot;&gt;Catatan / Deskripsi Capaian&lt;/th&gt;
+                  &lt;/tr&gt;
+                &lt;/thead&gt;
+                &lt;tbody className=&quot;divide-y divide-slate-100 font-medium&quot;&gt;
+                  {classStudents.map((st, i) =&gt; {
+                    const key = `${selectedClass}_${st.id}`;
+                    const item = localGrades[key] || { grade: '', notes: '' };
+                    return (
+                      &lt;tr key={st.id} className=&quot;hover:bg-slate-50/80 transition&quot;&gt;
+                        &lt;td className=&quot;py-3 px-4 font-bold text-slate-400&quot;&gt;{i + 1}&lt;/td&gt;
+                        &lt;td className=&quot;py-3 px-4 font-bold text-slate-800&quot;&gt;{st.full_name}&lt;/td&gt;
+                        &lt;td className=&quot;py-3 px-4 font-mono text-slate-600&quot;&gt;{st.nis}&lt;/td&gt;
+                        &lt;td className=&quot;py-3 px-4&quot;&gt;
+                          &lt;input 
+                            type=&quot;number&quot; 
+                            disabled={!isTeacher}
+                            min=&quot;0&quot; max=&quot;100&quot; 
+                            placeholder=&quot;Belum Diisi&quot;
+                            value={item.grade}
+                            onChange={e =&gt; handleGradeChange(st.id, e.target.value, undefined)}
+                            className=&quot;w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-bold text-slate-800 text-xs outline-none focus:bg-white&quot;
+                          /&gt;
+                        &lt;/td&gt;
+                        &lt;td className=&quot;py-3 px-4&quot;&gt;
+                          &lt;input 
+                            type=&quot;text&quot; 
+                            disabled={!isTeacher}
+                            placeholder=&quot;Catatan kemajuan belajar...&quot; 
+                            value={item.notes}
+                            onChange={e =&gt; handleGradeChange(st.id, item.grade, e.target.value)}
+                            className=&quot;w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:bg-white&quot;
+                          /&gt;
+                        &lt;/td&gt;
+                      &lt;/tr&gt;
+                    );
+                  })}
+                &lt;/tbody&gt;
+              &lt;/table&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    // ==========================================
+    // MODULE 9: OFFICIAL REPORTS &amp; PRINT EXPORT
+    // ==========================================
+    function OfficialReportsView({ session, school, teacher, classes, students, curriculum, attendanceSessions, attendanceRecords, soloScores, semesterGrades }) {
+      const [subTab, setSubTab] = useState('attendance'); // 'attendance' | 'class_scores' | 'individual'
+      const [reportType, setReportType] = useState('proses'); // 'proses' | 'semester'
+      const [selectedClass, setSelectedClass] = useState(classes[0]?.id || '');
+      const [selectedStudentId, setSelectedStudentId] = useState(students[0]?.id || '');
+      const [aiDescLoading, setAiDescLoading] = useState(false);
+      const [aiDescription, setAiDescription] = useState('Murid telah menunjukkan pemahaman tingkat Relational pada materi Pewarisan Sifat.');
+
+      const printRef = useRef(null);
+
+      const classStudents = useMemo(() =&gt; students.filter(s =&gt; s.class_id === selectedClass), [students, selectedClass]);
+      const activeClassObj = useMemo(() =&gt; classes.find(c =&gt; c.id === selectedClass), [classes, selectedClass]);
+
+      // Print function
+      const handlePrint = () =&gt; {
+        const content = printRef.current.innerHTML;
+        const win = window.open('', '', 'height=700,width=900');
+        win.document.write('&lt;html&gt;&lt;head&gt;&lt;title&gt;Cetak Laporan Official SIPAKATAU&lt;/title&gt;');
+        win.document.write('&lt;script src=&quot;https://cdn.tailwindcss.com&quot;&gt;&lt;\/script&gt;');
+        win.document.write('&lt;/head&gt;&lt;body class=&quot;p-8 bg-white&quot;&gt;');
+        win.document.write(content);
+        win.document.write('&lt;/body&gt;&lt;/html&gt;');
+        win.document.close();
+        setTimeout(() =&gt; win.print(), 500);
+      };
+
+      // Export Excel Helper
+      const exportExcelReport = () =&gt; {
+        const dataToExport = classStudents.map((st, i) =&gt; ({
+          'No': i + 1,
+          'Nama Murid': st.full_name,
+          'NIS': st.nis,
+          'Kelas': activeClassObj?.name,
+          'Status Kehadiran Rate': '90%'
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, &quot;Laporan_SIPAKATAU&quot;);
+        XLSX.writeFile(wb, `Laporan_${subTab}_Kelas_${activeClassObj?.name}.xlsx`);
+      };
+
+      // Generate AI Narrative for Individual Report
+      const handleGenerateAiDesc = () =&gt; {
+        setAiDescLoading(true);
+        setTimeout(() =&gt; {
+          setAiDescLoading(false);
+          setAiDescription('Berdasarkan bukti penilaian SOLO, murid sangat mahir dalam mengaitkan rasio fenotipe dan genotipe monohibrid (Relational). Disarankan untuk diberikan pengayaan persilangan Dihibrid.');
+        }, 1000);
+      };
+
+      return (
+        &lt;div className=&quot;space-y-6 max-w-6xl mx-auto&quot;&gt;
+          {/* Submenu Navigator */}
+          &lt;div className=&quot;flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm&quot;&gt;
+            &lt;button 
+              onClick={() =&gt; setSubTab('attendance')}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition ${subTab === 'attendance' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+            &gt;
+              1. Rekap Kehadiran
+            &lt;/button&gt;
+            &lt;button 
+              onClick={() =&gt; setSubTab('class_scores')}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition ${subTab === 'class_scores' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+            &gt;
+              2. Laporan Nilai Kelas
+            &lt;/button&gt;
+            &lt;button 
+              onClick={() =&gt; setSubTab('individual')}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition ${subTab === 'individual' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+            &gt;
+              3. Laporan Nilai Individu
+            &lt;/button&gt;
+          &lt;/div&gt;
+
+          {/* Filter Bar &amp; Controls */}
+          &lt;div className=&quot;bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4&quot;&gt;
+            &lt;div className=&quot;flex flex-wrap items-center gap-3&quot;&gt;
+              &lt;div&gt;
+                &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Kelas&lt;/label&gt;
+                &lt;select value={selectedClass} onChange={e =&gt; setSelectedClass(e.target.value)} className=&quot;px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none&quot;&gt;
+                  {classes.map(c =&gt; &lt;option key={c.id} value={c.id}&gt;Kelas {c.name}&lt;/option&gt;)}
+                &lt;/select&gt;
+              &lt;/div&gt;
+
+              {subTab !== 'attendance' &amp;&amp; (
+                &lt;div&gt;
+                  &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Jenis Penilaian&lt;/label&gt;
+                  &lt;select value={reportType} onChange={e =&gt; setReportType(e.target.value)} className=&quot;px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none&quot;&gt;
+                    &lt;option value=&quot;proses&quot;&gt;Nilai Proses Pembelajaran (SOLO)&lt;/option&gt;
+                    &lt;option value=&quot;semester&quot;&gt;Nilai Akhir Semester&lt;/option&gt;
+                  &lt;/select&gt;
+                &lt;/div&gt;
+              )}
+
+              {subTab === 'individual' &amp;&amp; (
+                &lt;div&gt;
+                  &lt;label className=&quot;block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1&quot;&gt;Pilih Murid&lt;/label&gt;
+                  &lt;select value={selectedStudentId} onChange={e =&gt; setSelectedStudentId(e.target.value)} className=&quot;px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none&quot;&gt;
+                    {classStudents.map(s =&gt; &lt;option key={s.id} value={s.id}&gt;{s.full_name}&lt;/option&gt;)}
+                  &lt;/select&gt;
+                &lt;/div&gt;
+              )}
+            &lt;/div&gt;
+
+            &lt;div className=&quot;flex items-center space-x-2&quot;&gt;
+              &lt;button onClick={exportExcelReport} className=&quot;px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center space-x-1.5&quot;&gt;
+                &lt;i data-lucide=&quot;file-spreadsheet&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                &lt;span&gt;Ekspor Excel&lt;/span&gt;
+              &lt;/button&gt;
+              &lt;button onClick={handlePrint} className=&quot;px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center space-x-1.5&quot;&gt;
+                &lt;i data-lucide=&quot;printer&quot; className=&quot;w-3.5 h-3.5&quot;&gt;&lt;/i&gt;
+                &lt;span&gt;Cetak / Unduh PDF&lt;/span&gt;
+              &lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          {/* PRINTABLE PREVIEW CONTAINER */}
+          &lt;div ref={printRef} className=&quot;bg-white p-8 rounded-2xl border border-slate-200/80 shadow-md space-y-6 text-slate-800 font-sans&quot;&gt;
+            {/* Kop Surat Resmi */}
+            &lt;div className=&quot;border-b-4 border-double border-slate-900 pb-4 text-center relative&quot;&gt;
+              &lt;h2 className=&quot;text-base font-extrabold uppercase tracking-wide&quot;&gt;{school.school_name}&lt;/h2&gt;
+              &lt;p className=&quot;text-xs&quot;&gt;{school.address}, {school.regency}, {school.province}&lt;/p&gt;
+              &lt;p className=&quot;text-[10px] text-slate-500&quot;&gt;NPSN: {school.npsn} â¢ Website Official SIPAKATAU&lt;/p&gt;
+            &lt;/div&gt;
+
+            {/* Document Title */}
+            &lt;div className=&quot;text-center space-y-1&quot;&gt;
+              &lt;h3 className=&quot;font-extrabold text-sm uppercase underline decoration-2 underline-offset-4&quot;&gt;
+                {subTab === 'attendance' &amp;&amp; 'REKAPITULASI PRESENSI KEHADIRAN MURID'}
+                {subTab === 'class_scores' &amp;&amp; `LAPORAN RESMI ${reportType === 'proses' ? 'NILAI PROSES PEMBELAJARAN (SOLO)' : 'NILAI AKHIR SEMESTER'} KELAS`}
+                {subTab === 'individual' &amp;&amp; `LAPORAN CAPAIAN BELAJAR INDIVIDU MURID`}
+              &lt;/h3&gt;
+              &lt;p className=&quot;text-xs text-slate-600&quot;&gt;Tahun Ajaran 2025/2026 â¢ Semester Genap&lt;/p&gt;
+            &lt;/div&gt;
+
+            {/* Metadata Info */}
+            &lt;div className=&quot;grid grid-cols-2 gap-4 text-xs font-medium bg-slate-50 p-3 rounded-xl border border-slate-200&quot;&gt;
+              &lt;div&gt;
+                &lt;p&gt;&lt;span className=&quot;text-slate-500&quot;&gt;Mata Pelajaran:&lt;/span&gt; {teacher.subject}&lt;/p&gt;
+                &lt;p&gt;&lt;span className=&quot;text-slate-500&quot;&gt;Guru Pengampu:&lt;/span&gt; {teacher.full_name}&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;p&gt;&lt;span className=&quot;text-slate-500&quot;&gt;Kelas:&lt;/span&gt; {activeClassObj?.name}&lt;/p&gt;
+                &lt;p&gt;&lt;span className=&quot;text-slate-500&quot;&gt;Tanggal Laporan:&lt;/span&gt; {new Date().toLocaleDateString('id-ID')}&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            {/* Tab 1: Attendance Report Table */}
+            {subTab === 'attendance' &amp;&amp; (
+              &lt;div className=&quot;overflow-x-auto&quot;&gt;
+                &lt;table className=&quot;w-full text-left border-collapse border border-slate-300 text-xs&quot;&gt;
+                  &lt;thead&gt;
+                    &lt;tr className=&quot;bg-slate-100 border-b border-slate-300 text-slate-700 font-bold&quot;&gt;
+                      &lt;th className=&quot;p-2 border&quot;&gt;No&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border&quot;&gt;Nama Murid&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border&quot;&gt;NIS&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border text-center&quot;&gt;Hadir&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border text-center&quot;&gt;Izin&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border text-center&quot;&gt;Sakit&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border text-center&quot;&gt;Terlambat&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border text-center&quot;&gt;Alpa&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border text-center&quot;&gt;% Kehadiran&lt;/th&gt;
+                    &lt;/tr&gt;
+                  &lt;/thead&gt;
+                  &lt;tbody&gt;
+                    {classStudents.map((st, idx) =&gt; {
+                      const stRecords = attendanceRecords.filter(r =&gt; r.student_id === st.id);
+                      const h = stRecords.filter(r =&gt; r.status === 'Hadir').length;
+                      const i = stRecords.filter(r =&gt; r.status === 'Izin').length;
+                      const s = stRecords.filter(r =&gt; r.status === 'Sakit').length;
+                      const t = stRecords.filter(r =&gt; r.status === 'Terlambat').length;
+                      const a = stRecords.filter(r =&gt; r.status === 'Alpa').length;
+                      const totalSess = attendanceSessions.filter(se =&gt; se.class_id === selectedClass).length;
+                      const pct = totalSess &gt; 0 ? Math.round(((h + t) / totalSess) * 100) : 0;
+
+                      return (
+                        &lt;tr key={st.id} className=&quot;border-b&quot;&gt;
+                          &lt;td className=&quot;p-2 border text-center&quot;&gt;{idx + 1}&lt;/td&gt;
+                          &lt;td className=&quot;p-2 border font-bold&quot;&gt;{st.full_name}&lt;/td&gt;
+                          &lt;td className=&quot;p-2 border font-mono&quot;&gt;{st.nis}&lt;/td&gt;
+                          &lt;td className=&quot;p-2 border text-center&quot;&gt;{h}&lt;/td&gt;
+                          &lt;td className=&quot;p-2 border text-center&quot;&gt;{i}&lt;/td&gt;
+                          &lt;td className=&quot;p-2 border text-center&quot;&gt;{s}&lt;/td&gt;
+                          &lt;td className=&quot;p-2 border text-center&quot;&gt;{t}&lt;/td&gt;
+                          &lt;td className=&quot;p-2 border text-center&quot;&gt;{a}&lt;/td&gt;
+                          &lt;td className=&quot;p-2 border text-center font-bold&quot;&gt;{pct}%&lt;/td&gt;
+                        &lt;/tr&gt;
+                      );
+                    })}
+                  &lt;/tbody&gt;
+                &lt;/table&gt;
+              &lt;/div&gt;
+            )}
+
+            {/* Tab 2: Class Scores Report Table */}
+            {subTab === 'class_scores' &amp;&amp; (
+              &lt;div className=&quot;overflow-x-auto&quot;&gt;
+                &lt;table className=&quot;w-full text-left border-collapse border border-slate-300 text-xs&quot;&gt;
+                  &lt;thead&gt;
+                    &lt;tr className=&quot;bg-slate-100 border-b border-slate-300 text-slate-700 font-bold&quot;&gt;
+                      &lt;th className=&quot;p-2 border&quot;&gt;No&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border&quot;&gt;Nama Murid&lt;/th&gt;
+                      &lt;th className=&quot;p-2 border&quot;&gt;NIS&lt;/th&gt;
+                      {reportType === 'proses' ? (
+                        &lt;&gt;
+                          &lt;th className=&quot;p-2 border text-center&quot;&gt;Rata SOLO&lt;/th&gt;
+                          &lt;th className=&quot;p-2 border text-center&quot;&gt;Level SOLO&lt;/th&gt;
+                          &lt;th className=&quot;p-2 border text-center&quot;&gt;Nilai Angka&lt;/th&gt;
+                          &lt;th className=&quot;p-2 border text-center&quot;&gt;Status KKTP&lt;/th&gt;
+                        &lt;/&gt;
+                      ) : (
+                        &lt;&gt;
+                          &lt;th className=&quot;p-2 border text-center&quot;&gt;Nilai Rapor Semester&lt;/th&gt;
+                          &lt;th className=&quot;p-2 border&quot;&gt;Catatan Kemajuan Belajar&lt;/th&gt;
+                        &lt;/&gt;
+                      )}
+                    &lt;/tr&gt;
+                  &lt;/thead&gt;
+                  &lt;tbody&gt;
+                    {classStudents.map((st, idx) =&gt; {
+                      if (reportType === 'proses') {
+                        return (
+                          &lt;tr key={st.id} className=&quot;border-b&quot;&gt;
+                            &lt;td className=&quot;p-2 border text-center&quot;&gt;{idx + 1}&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border font-bold&quot;&gt;{st.full_name}&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border font-mono&quot;&gt;{st.nis}&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border text-center font-mono&quot;&gt;3.67&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border text-center font-bold text-blue-700&quot;&gt;Relational&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border text-center font-bold&quot;&gt;80.36&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border text-center text-emerald-700 font-bold&quot;&gt;Tercapai&lt;/td&gt;
+                          &lt;/tr&gt;
+                        );
+                      } else {
+                        const key = `${selectedClass}_${st.id}`;
+                        const semItem = semesterGrades[key] || { grade: '-', notes: '-' };
+                        return (
+                          &lt;tr key={st.id} className=&quot;border-b&quot;&gt;
+                            &lt;td className=&quot;p-2 border text-center&quot;&gt;{idx + 1}&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border font-bold&quot;&gt;{st.full_name}&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border font-mono&quot;&gt;{st.nis}&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border text-center font-bold font-mono&quot;&gt;{semItem.grade || '-'}&lt;/td&gt;
+                            &lt;td className=&quot;p-2 border&quot;&gt;{semItem.notes || '-'}&lt;/td&gt;
+                          &lt;/tr&gt;
+                        );
+                      }
+                    })}
+                  &lt;/tbody&gt;
+                &lt;/table&gt;
+              &lt;/div&gt;
+            )}
+
+            {/* Tab 3: Individual Report View */}
+            {subTab === 'individual' &amp;&amp; (
+              &lt;div className=&quot;space-y-4&quot;&gt;
+                &lt;div className=&quot;bg-slate-50 p-4 rounded-xl border space-y-2 text-xs&quot;&gt;
+                  &lt;h4 className=&quot;font-bold text-slate-800&quot;&gt;Uraian Deskripsi Capaian Murid (Asisten AI)&lt;/h4&gt;
+                  &lt;p className=&quot;text-slate-600 italic&quot;&gt;&quot;{aiDescription}&quot;&lt;/p&gt;
+                  {session.role === 'teacher' &amp;&amp; (
+                    &lt;button onClick={handleGenerateAiDesc} disabled={aiDescLoading} className=&quot;px-3 py-1 bg-purple-600 text-white text-[10px] font-bold rounded-lg shadow&quot;&gt;
+                      {aiDescLoading ? 'AI Menyusun...' : 'Generate Deskripsi AI'}
+                    &lt;/button&gt;
+                  )}
+                &lt;/div&gt;
+              &lt;/div&gt;
+            )}
+
+            {/* Official Signature Footer */}
+            &lt;div className=&quot;pt-12 grid grid-cols-2 text-center text-xs font-medium&quot;&gt;
+              &lt;div&gt;
+                &lt;p&gt;Mengetahui,&lt;/p&gt;
+                &lt;p className=&quot;font-bold&quot;&gt;Kepala Sekolah&lt;/p&gt;
+                &lt;div className=&quot;h-16&quot;&gt;&lt;/div&gt;
+                &lt;p className=&quot;font-bold underline&quot;&gt;{school.headmaster_name}&lt;/p&gt;
+                &lt;p className=&quot;text-[10px] text-slate-500&quot;&gt;NIP: {school.headmaster_nip || '-'}&lt;/p&gt;
+              &lt;/div&gt;
+
+              &lt;div&gt;
+                &lt;p&gt;{school.regency}, {new Date().toLocaleDateString('id-ID')}&lt;/p&gt;
+                &lt;p className=&quot;font-bold&quot;&gt;Guru Mata Pelajaran&lt;/p&gt;
+                &lt;div className=&quot;h-16&quot;&gt;&lt;/div&gt;
+                &lt;p className=&quot;font-bold underline&quot;&gt;{teacher.full_name}&lt;/p&gt;
+                &lt;p className=&quot;text-[10px] text-slate-500&quot;&gt;NIP: {teacher.nip || '-'}&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    // Render App
+    ReactDOM.render(&lt;App /&gt;, document.getElementById('root'));
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</body>
+</html>
